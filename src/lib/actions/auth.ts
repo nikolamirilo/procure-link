@@ -68,7 +68,7 @@ export async function signOut() {
   redirect("/login");
 }
 
-function slugify(text: string): string {
+async function slugify(text: string): Promise<string> {
   return text
     .toLowerCase()
     .replace(/[^\w\s-]/g, "")
@@ -88,7 +88,7 @@ export async function completeOnboarding(formData: FormData) {
   const companyType = (user.user_metadata?.company_type as string) === "supplier" ? "supplier" : "restaurant";
   const isSupplier = companyType === "supplier";
 
-  const baseSlug = slugify(companyName);
+  const baseSlug = await slugify(companyName);
   const slug = `${baseSlug}-${Date.now().toString(36)}`;
 
   // Use RPC to run the entire onboarding as a single SECURITY DEFINER transaction

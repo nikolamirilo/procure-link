@@ -3,6 +3,13 @@ import { Logo } from "@/components/shared/logo";
 import { HeroAnimation } from "@/components/landing/hero-animation";
 import { HowItWorksAnimation } from "@/components/landing/how-it-works-animation";
 import {
+  Reveal,
+  FadeIn,
+  Stagger,
+  StaggerItem,
+  HoverLift,
+} from "@/components/landing/motion";
+import {
   Truck,
   ShoppingCart,
   CalendarDays,
@@ -207,7 +214,7 @@ export default function HomePage() {
         <div className="max-w-7xl mx-auto px-6 pt-20 pb-16 md:pt-28 md:pb-24 relative">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             {/* Left: copy */}
-            <div className="space-y-8">
+            <FadeIn className="space-y-8">
               <div className="inline-flex items-center gap-2 rounded-full border px-4 py-1.5 text-sm font-medium text-muted-foreground bg-background/80 backdrop-blur-sm">
                 <span className="relative flex h-2 w-2">
                   <span className="absolute inline-flex h-full w-full rounded-full bg-emerald-500 opacity-75 animate-ping" />
@@ -249,11 +256,11 @@ export default function HomePage() {
                   );
                 })}
               </div>
-            </div>
+            </FadeIn>
             {/* Right: illustration animation */}
-            <div className="hidden lg:block">
+            <FadeIn delay={0.2} className="hidden lg:block">
               <HeroAnimation />
-            </div>
+            </FadeIn>
           </div>
         </div>
       </section>
@@ -262,7 +269,7 @@ export default function HomePage() {
       <section className="border-y bg-muted/30">
         <div className="max-w-7xl mx-auto px-6 py-16 md:py-20">
           <div className="grid md:grid-cols-2 gap-10 lg:gap-16 items-start">
-            <div>
+            <Reveal>
               <div className="inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold text-primary bg-primary/5 mb-4">
                 THE PROBLEM
               </div>
@@ -270,8 +277,8 @@ export default function HomePage() {
                 Restaurant procurement still runs on{" "}
                 <span className="gradient-text">WhatsApp and PDFs</span>
               </h2>
-            </div>
-            <div className="space-y-4 text-muted-foreground leading-relaxed">
+            </Reveal>
+            <Reveal delay={0.1} className="space-y-4 text-muted-foreground leading-relaxed">
               <p>
                 Most kitchens manage 6 to 12 suppliers. Each one wants orders in their own format - WhatsApp, email, a PDF, a phone call before 9pm.
               </p>
@@ -281,7 +288,7 @@ export default function HomePage() {
               <p className="text-foreground font-medium">
                 ProcureLink replaces the mess with one workflow both sides can see.
               </p>
-            </div>
+            </Reveal>
           </div>
         </div>
       </section>
@@ -289,39 +296,42 @@ export default function HomePage() {
       {/* ===== FEATURES ===== */}
       <section id="features" className="py-24 md:py-32">
         <div className="max-w-7xl mx-auto px-6">
-          <div className="text-center mb-16 max-w-2xl mx-auto">
-            <div className="inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold text-primary bg-primary/5 mb-4">
-              WHAT YOU GET
+          <Reveal>
+            <div className="text-center mb-16 max-w-2xl mx-auto">
+              <div className="inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold text-primary bg-primary/5 mb-4">
+                WHAT YOU GET
+              </div>
+              <h2 className="text-3xl md:text-4xl font-bold tracking-tight">
+                The whole procurement workflow,{" "}
+                <span className="gradient-text">in one product</span>
+              </h2>
+              <p className="text-muted-foreground mt-4 text-lg">
+                Not a marketplace listing tool. Not a fancy order form. The full loop from discovery to delivery to repeat.
+              </p>
             </div>
-            <h2 className="text-3xl md:text-4xl font-bold tracking-tight">
-              The whole procurement workflow,{" "}
-              <span className="gradient-text">in one product</span>
-            </h2>
-            <p className="text-muted-foreground mt-4 text-lg">
-              Not a marketplace listing tool. Not a fancy order form. The full loop from discovery to delivery to repeat.
-            </p>
-          </div>
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          </Reveal>
+          <Stagger className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {features.map((feature) => {
               const Icon = feature.icon;
               return (
-                <div
-                  key={feature.title}
-                  className="group relative rounded-2xl border bg-card p-7 premium-shadow hover:premium-shadow-lg transition-all duration-300 hover:-translate-y-1"
-                >
-                  <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center mb-5 group-hover:bg-primary/15 transition-colors">
-                    <Icon className="h-6 w-6 text-primary" />
-                  </div>
-                  <h3 className="font-semibold text-lg mb-2">
-                    {feature.title}
-                  </h3>
-                  <p className="text-muted-foreground text-sm leading-relaxed">
-                    {feature.description}
-                  </p>
-                </div>
+                <StaggerItem key={feature.title}>
+                  <HoverLift className="h-full">
+                    <div className="group relative h-full rounded-2xl border bg-card p-7 premium-shadow hover:premium-shadow-lg transition-shadow">
+                      <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center mb-5 group-hover:bg-primary/15 transition-colors">
+                        <Icon className="h-6 w-6 text-primary" />
+                      </div>
+                      <h3 className="font-semibold text-lg mb-2">
+                        {feature.title}
+                      </h3>
+                      <p className="text-muted-foreground text-sm leading-relaxed">
+                        {feature.description}
+                      </p>
+                    </div>
+                  </HoverLift>
+                </StaggerItem>
               );
             })}
-          </div>
+          </Stagger>
         </div>
       </section>
 
@@ -337,23 +347,25 @@ export default function HomePage() {
                 From sign-up to first order in{" "}
                 <span className="gradient-text">under 10 minutes</span>
               </h2>
-              <div className="space-y-8">
+              <Stagger className="space-y-8">
                 {steps.map((step) => (
-                  <div key={step.step} className="flex gap-5">
-                    <div className="shrink-0">
-                      <div className="h-10 w-10 rounded-xl bg-primary text-primary-foreground flex items-center justify-center text-sm font-bold">
-                        {step.step}
+                  <StaggerItem key={step.step}>
+                    <div className="flex gap-5">
+                      <div className="shrink-0">
+                        <div className="h-10 w-10 rounded-xl bg-primary text-primary-foreground flex items-center justify-center text-sm font-bold">
+                          {step.step}
+                        </div>
+                      </div>
+                      <div>
+                        <h3 className="font-semibold text-lg">{step.title}</h3>
+                        <p className="text-muted-foreground text-sm mt-1 leading-relaxed">
+                          {step.description}
+                        </p>
                       </div>
                     </div>
-                    <div>
-                      <h3 className="font-semibold text-lg">{step.title}</h3>
-                      <p className="text-muted-foreground text-sm mt-1 leading-relaxed">
-                        {step.description}
-                      </p>
-                    </div>
-                  </div>
+                  </StaggerItem>
                 ))}
-              </div>
+              </Stagger>
             </div>
             <div className="hidden lg:flex justify-center">
               <HowItWorksAnimation />
@@ -540,56 +552,135 @@ export default function HomePage() {
       </section>
 
       {/* ===== INSIDE THE BETA ===== */}
-      <section id="beta" className="py-24 md:py-32 bg-muted/20">
-        <div className="max-w-7xl mx-auto px-6">
-          <div className="text-center mb-16 max-w-2xl mx-auto">
-            <div className="inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold text-primary bg-primary/5 mb-4">
-              INSIDE THE BETA
+      <section id="beta" className="relative py-24 md:py-32 overflow-hidden bg-muted/20">
+        {/* decorative background */}
+        <div className="absolute inset-0 pointer-events-none">
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,var(--color-brand-50)_0%,transparent_55%)] opacity-70" />
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-[480px] w-[480px] rounded-full bg-primary/5 blur-3xl" />
+          <div
+            className="absolute inset-0 opacity-[0.035]"
+            style={{
+              backgroundImage:
+                "linear-gradient(var(--color-foreground) 1px, transparent 1px), linear-gradient(90deg, var(--color-foreground) 1px, transparent 1px)",
+              backgroundSize: "48px 48px",
+            }}
+          />
+        </div>
+
+        <div className="max-w-7xl mx-auto px-6 relative">
+          <Reveal>
+            <div className="text-center mb-6 max-w-2xl mx-auto">
+              <div className="inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-semibold text-primary bg-primary/5 mb-4">
+                <span className="relative flex h-2 w-2">
+                  <span className="absolute inline-flex h-full w-full rounded-full bg-primary opacity-75 animate-ping" />
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-primary" />
+                </span>
+                INSIDE THE BETA
+              </div>
+              <h2 className="text-3xl md:text-5xl font-bold tracking-tight leading-[1.1]">
+                What you get for being{" "}
+                <span className="gradient-text">early</span>
+              </h2>
+              <p className="text-muted-foreground mt-5 text-lg leading-relaxed">
+                We are not pretending to be bigger than we are. Here is the honest deal for pilot members.
+              </p>
             </div>
-            <h2 className="text-3xl md:text-4xl font-bold tracking-tight">
-              What you get for being{" "}
-              <span className="gradient-text">early</span>
-            </h2>
-            <p className="text-muted-foreground mt-4 text-lg">
-              We are not pretending to be bigger than we are. Here is the honest deal for pilot members.
-            </p>
-          </div>
-          <div className="grid gap-6 md:grid-cols-3">
-            {pilotBenefits.map((b) => {
+          </Reveal>
+
+          {/* Cohort stat strip */}
+          <Reveal delay={0.1}>
+            <div className="mx-auto mb-14 max-w-3xl grid grid-cols-3 gap-px rounded-2xl border bg-border overflow-hidden">
+              {[
+                { value: "12", label: "Pilot seats" },
+                { value: "<24h", label: "Founder reply" },
+                { value: "50%", label: "Off for life" },
+              ].map((stat) => (
+                <div key={stat.label} className="bg-card px-4 py-5 text-center">
+                  <div className="text-2xl md:text-3xl font-bold tracking-tight gradient-text">
+                    {stat.value}
+                  </div>
+                  <div className="text-[11px] mt-1 uppercase tracking-wider text-muted-foreground font-medium">
+                    {stat.label}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </Reveal>
+
+          <Stagger className="grid gap-6 md:grid-cols-3">
+            {pilotBenefits.map((b, i) => {
               const Icon = b.icon;
               return (
-                <div
-                  key={b.title}
-                  className="rounded-2xl border bg-card p-7 premium-shadow space-y-4"
-                >
-                  <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center">
-                    <Icon className="h-6 w-6 text-primary" />
-                  </div>
-                  <h3 className="font-semibold text-lg">{b.title}</h3>
-                  <p className="text-muted-foreground text-sm leading-relaxed">
-                    {b.description}
-                  </p>
-                </div>
+                <StaggerItem key={b.title}>
+                  <HoverLift className="h-full">
+                    <div className="group relative h-full rounded-2xl border bg-card p-7 premium-shadow hover:premium-shadow-lg transition-shadow overflow-hidden">
+                      {/* corner accent */}
+                      <div className="absolute -top-12 -right-12 h-32 w-32 rounded-full bg-primary/5 group-hover:bg-primary/10 transition-colors" />
+                      {/* rank number */}
+                      <div className="absolute top-5 right-5 text-5xl font-bold text-primary/10 leading-none select-none">
+                        0{i + 1}
+                      </div>
+                      <div className="relative space-y-4">
+                        <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-primary/15 to-primary/5 border border-primary/10 flex items-center justify-center group-hover:scale-110 group-hover:rotate-3 transition-transform">
+                          <Icon className="h-6 w-6 text-primary" />
+                        </div>
+                        <h3 className="font-semibold text-lg">{b.title}</h3>
+                        <p className="text-muted-foreground text-sm leading-relaxed">
+                          {b.description}
+                        </p>
+                      </div>
+                    </div>
+                  </HoverLift>
+                </StaggerItem>
               );
             })}
-          </div>
+          </Stagger>
+
           {/* Founder note */}
-          <div className="mt-16 mx-auto max-w-3xl rounded-2xl border bg-card p-8 md:p-10 premium-shadow">
-            <div className="flex items-start gap-4">
-              <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                <MessageCircle className="h-5 w-5 text-primary" />
-              </div>
-              <div className="space-y-3">
-                <p className="text-xs font-semibold text-primary uppercase tracking-wide">A note from the founder</p>
-                <p className="text-foreground leading-relaxed">
-                  We are building this with a small cohort because the only way to get procurement right is to sit next to people doing it every day. If you join the beta, expect emails, calls, and the occasional "would this be useful?" before we ship something.
-                </p>
-                <p className="text-muted-foreground text-sm">
-                  In return, you get a product shaped around your kitchen - not someone else's idea of one.
-                </p>
+          <Reveal delay={0.15}>
+            <div className="mt-16 mx-auto max-w-3xl relative">
+              {/* soft glow behind card */}
+              <div className="absolute -inset-1 rounded-3xl bg-gradient-to-br from-primary/20 via-primary/5 to-transparent blur-xl opacity-60" />
+              <div className="relative rounded-2xl border bg-card p-8 md:p-10 premium-shadow-lg">
+                <div className="flex items-start gap-5">
+                  <div className="relative shrink-0">
+                    <div className="h-14 w-14 rounded-full bg-gradient-to-br from-primary to-primary/70 text-primary-foreground flex items-center justify-center font-bold text-lg">
+                      N
+                    </div>
+                    <div className="absolute -bottom-1 -right-1 h-5 w-5 rounded-full bg-card border-2 border-card flex items-center justify-center">
+                      <span className="h-3 w-3 rounded-full bg-emerald-500 animate-pulse" />
+                    </div>
+                  </div>
+                  <div className="space-y-3 flex-1">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <p className="text-xs font-semibold text-primary uppercase tracking-wide">A note from the founder</p>
+                      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 px-2 py-0.5 text-[10px] font-semibold">
+                        <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                        Replying today
+                      </span>
+                    </div>
+                    <p className="text-foreground leading-relaxed">
+                      We are building this with a small cohort because the only way to get procurement right is to sit next to people doing it every day. If you join the beta, expect emails, calls, and the occasional &quot;would this be useful?&quot; before we ship something.
+                    </p>
+                    <p className="text-muted-foreground text-sm leading-relaxed">
+                      In return, you get a product shaped around your kitchen - not someone else&apos;s idea of one.
+                    </p>
+                    <div className="pt-2 flex flex-col sm:flex-row sm:items-center gap-3">
+                      <a
+                        href="mailto:hello@procure-link.com"
+                        className="inline-flex items-center gap-2 rounded-xl bg-primary px-5 h-10 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-all hover:shadow-lg hover:shadow-primary/25 active:scale-[0.98]"
+                      >
+                        <Mail className="h-4 w-4" /> Email the founder
+                      </a>
+                      <span className="text-xs text-muted-foreground">
+                        Or <Link href="/register" className="font-semibold text-primary hover:underline">grab a pilot seat</Link> - takes 5 minutes.
+                      </span>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
-          </div>
+          </Reveal>
         </div>
       </section>
 
@@ -700,7 +791,7 @@ export default function HomePage() {
       {/* ===== FINAL CTA ===== */}
       <section className="py-24">
         <div className="max-w-7xl mx-auto px-6">
-          <div className="relative rounded-3xl bg-primary overflow-hidden p-12 md:p-20 text-center">
+          <Reveal className="relative rounded-3xl bg-primary overflow-hidden p-12 md:p-20 text-center">
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_50%,rgba(255,255,255,0.12)_0%,transparent_60%)]" />
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_80%,rgba(255,255,255,0.08)_0%,transparent_40%)]" />
             <div className="relative space-y-6 max-w-2xl mx-auto">
@@ -729,7 +820,7 @@ export default function HomePage() {
                 </a>
               </div>
             </div>
-          </div>
+          </Reveal>
         </div>
       </section>
 

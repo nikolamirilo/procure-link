@@ -40,7 +40,17 @@
       "Bash(curl -s -o /dev/null -w \"home: %{http_code}\\\\n\" http://localhost:3000)",
       "Bash(curl -s http://localhost:3000)",
       "Bash(pkill -f \"next dev\")",
-      "mcp__Claude_Preview__preview_start"
+      "mcp__Claude_Preview__preview_start",
+      "Bash(grep -c '^[[:space:]]*</section>$' src/app/page.tsx)",
+      "Bash(grep -n -v '^[[:space:]]*</section>$' src/app/page.tsx)",
+      "Bash(awk 'NR>=576 && NR<=600' src/app/page.tsx)",
+      "Bash(grep -vE '^\\\\s*$')",
+      "Bash(cd /home/nikola/Desktop/procure-link; grep -nv '^[[:space:]]*</section>$' src/app/page.tsx > /tmp/real_lines.txt 2>&1; tail -20 /tmp/real_lines.txt)",
+      "Bash(git checkout *)",
+      "Bash(echo \"EXIT:$?\")",
+      "Bash(find /home/nikola/Desktop/procure-link/src -type f > /tmp/srcfiles.txt 2>&1; wc -l /tmp/srcfiles.txt | cat)",
+      "Bash(ps -p 3845 -o pid,etime,cmd)",
+      "Bash(lsof -i :3000 -sTCP:LISTEN)"
     ]
   }
 }

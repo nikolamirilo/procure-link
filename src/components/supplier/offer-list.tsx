@@ -20,7 +20,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, Trash2, Tag, Clock, Percent } from "lucide-react";
+import { Plus, Trash2, Tag, Clock, Percent, Loader2 } from "lucide-react";
 
 interface Offer {
   id: string;
@@ -139,9 +139,10 @@ export function OfferList({
             )}
             <Button
               type="submit"
-              className="w-full h-11 font-semibold"
+              className="w-full h-11 font-semibold gap-2"
               disabled={loading}
             >
+              {loading && <Loader2 className="h-4 w-4 animate-spin" />}
               {loading ? "Creating..." : "Create Offer"}
             </Button>
           </form>

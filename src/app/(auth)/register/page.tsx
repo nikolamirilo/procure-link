@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import type { CompanyType } from "@/lib/supabase/types";
-import { Building2, UtensilsCrossed } from "lucide-react";
+import { Building2, UtensilsCrossed, Loader2 } from "lucide-react";
 import { Logo } from "@/components/shared/logo";
 import { cn } from "@/lib/utils";
 
@@ -125,7 +125,8 @@ export default function RegisterPage() {
                 {error}
               </div>
             )}
-            <Button type="submit" className="w-full h-11 text-sm font-semibold" disabled={loading}>
+            <Button type="submit" className="w-full h-11 text-sm font-semibold gap-2" disabled={loading}>
+              {loading && <Loader2 className="h-4 w-4 animate-spin" />}
               {loading ? "Creating account..." : "Create Account"}
             </Button>
           </form>

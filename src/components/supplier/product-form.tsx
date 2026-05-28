@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { PRODUCT_UNITS } from "@/lib/constants";
+import { Loader2 } from "lucide-react";
 
 interface Category {
   id: string;
@@ -147,7 +148,8 @@ export function ProductForm({ categories, product }: ProductFormProps) {
         <Label htmlFor="isAvailable">Available for ordering</Label>
       </div>
       {error && <p className="text-sm text-destructive">{error}</p>}
-      <Button type="submit" className="w-full" disabled={loading}>
+      <Button type="submit" className="w-full gap-2" disabled={loading}>
+        {loading && <Loader2 className="h-4 w-4 animate-spin" />}
         {loading
           ? "Saving..."
           : product
