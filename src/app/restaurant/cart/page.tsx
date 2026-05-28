@@ -1,0 +1,366 @@
+"use client";
+
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { useCart } from "@/hooks/use-cart";
+import { placeOrder } from "@/lib/actions/orders";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Separator } from "@/components/ui/separator";
+import {
+  Minus,
+  Plus,
+  Trash2,
+  ShoppingBag,
+  ArrowRight,
+  Loader2,
+  Repeat,
+} from "lucide-react";
+import Link from "next/link";
+
+export default function CartPage() {
+  const {
+    items,
+    updateQuantity,
+    removeItem,
+    getSupplierIds,
+    getSupplierItems,
+    clearCart,
+  } = useCart();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [deliveryDates, setDeliveryDates] = useState<Record<string, string>>(
+    {},
+  );
+  const [deliveryTimes, setDeliveryTimes] = useState<Record<string, string>>(
+    {},
+  );
+  const [notes, setNotes] = useState<Record<string, string>>({});
+  const router = useRouter();
+
+  const supplierIds = getSupplierIds();
+  const grandTotal = items.reduce((s, i) => s + i.unitPrice * i.quantity, 0);
+
+  if (items.length === 0) {
+    return (
+      <div className="space-y-6">
+        <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Cart</h1>
+        <div className="text-center py-20 space-y-3">
+          <div className="h-14 w-14 rounded-2xl bg-muted flex items-center justify-center mx-auto">
+            <ShoppingBag className="h-7 w-7 text-muted-foreground" />
+          </div>
+          <p className="text-muted-foreground font-medium text-lg">
+            Your cart is empty
+          </p>
+          <p className="text-sm text-muted-foreground">
+            Browse products and add items to get started
+          </p>
+          <Button
+            variant="outline"
+            className="mt-2"
+            onClick={() => router.push("/restaurant/browse")}
+          >
+            Browse Products
+            <ArrowRight className="h-4 w-4 ml-2" />
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  // Validate all suppliers have delivery dates
+  function validateDates(): boolean {
+    for (const sid of supplierIds) {
+      if (!deliveryDates[sid]) {
+        setError(
+          `Please select a delivery date for ${getSupplierItems(sid)[0]?.supplierName ?? "all suppliers"}`,
+        );
+        return false;
+      }
+    }
+    return true;
+  }
+
+  // Place orders for ALL suppliers in one click
+  async function handlePlaceAllOrders() {
+    setError(null);
+    if (!validateDates()) return;
+
+    setLoading(true);
+    const errors: string[] = [];
+
+    // Process each supplier sequentially
+    for (const supplierId of supplierIds) {
+      const supplierItems = getSupplierItems(supplierId);
+      const result = await placeOrder({
+        supplierId,
+        deliverySlotId: null,
+        deliveryDate: deliveryDates[supplierId],
+        notes: [
+          deliveryTimes[supplierId]
+            ? `Preferred delivery time: ${deliveryTimes[supplierId]}`
+            : "",
+          notes[supplierId] || "",
+        ]
+          .filter(Boolean)
+          .join(" - "),
+        items: supplierItems.map((i) => ({
+          productId: i.productId,
+          productName: i.productName,
+          unit: i.unit,
+          unitPrice: i.unitPrice,
+          quantity: i.quantity,
+        })),
+      });
+
+      if (result?.error) {
+        errors.push(`${supplierItems[0]?.supplierName}: ${result.error}`);
+      }
+    }
+
+    setLoading(false);
+
+    if (errors.length > 0) {
+      setError(errors.join(". "));
+    } else {
+      clearCart();
+      router.push("/restaurant/orders");
+    }
+  }
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Cart</h1>
+        <p className="text-muted-foreground mt-1 text-sm">
+          {items.length} item{items.length !== 1 ? "s" : ""} from{" "}
+          {supplierIds.length} supplier{supplierIds.length !== 1 ? "s" : ""}
+        </p>
+      </div>
+
+      {error && (
+        <div className="rounded-lg bg-destructive/10 border border-destructive/20 px-4 py-3 text-sm text-destructive">
+          {error}
+        </div>
+      )}
+
+      <div className="grid gap-5 lg:grid-cols-[1fr_300px]">
+        {/* Supplier groups */}
+        <div className="space-y-4">
+          {supplierIds.map((supplierId) => {
+            const supplierItems = getSupplierItems(supplierId);
+            const supplierName = supplierItems[0]?.supplierName ?? "Supplier";
+            const subtotal = supplierItems.reduce(
+              (sum, i) => sum + i.unitPrice * i.quantity,
+              0,
+            );
+
+            return (
+              <div
+                key={supplierId}
+                className="rounded-xl border bg-card premium-shadow overflow-hidden"
+              >
+                {/* Supplier header */}
+                <div className="px-4 py-2.5 border-b bg-muted/30 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <h3 className="font-semibold text-sm">{supplierName}</h3>
+                    <span className="text-[11px] text-muted-foreground">
+                      {supplierItems.length} item
+                      {supplierItems.length !== 1 ? "s" : ""}
+                    </span>
+                  </div>
+                  <span className="text-sm font-bold tabular-nums">
+                    EUR {subtotal.toFixed(2)}
+                  </span>
+                </div>
+
+                {/* Item rows */}
+                <div className="divide-y">
+                  {supplierItems.map((item) => (
+                    <div
+                      key={item.productId}
+                      className="flex items-center gap-3 px-4 py-3 text-sm"
+                    >
+                      <div className="flex-1 min-w-0">
+                        <span className="font-medium block truncate">
+                          {item.productName}
+                        </span>
+                        <span className="text-xs text-muted-foreground">
+                          EUR {item.unitPrice.toFixed(2)} / {item.unit}
+                        </span>
+                      </div>
+
+                      <div className="flex items-center gap-1 shrink-0">
+                        <button
+                          className="h-6 w-6 rounded-md border flex items-center justify-center hover:bg-muted cursor-pointer transition-colors"
+                          onClick={() =>
+                            updateQuantity(item.productId, item.quantity - 1)
+                          }
+                        >
+                          <Minus className="h-3 w-3" />
+                        </button>
+                        <span className="w-7 text-center text-xs font-semibold tabular-nums">
+                          {item.quantity}
+                        </span>
+                        <button
+                          className="h-6 w-6 rounded-md border flex items-center justify-center hover:bg-muted cursor-pointer transition-colors"
+                          onClick={() =>
+                            updateQuantity(item.productId, item.quantity + 1)
+                          }
+                        >
+                          <Plus className="h-3 w-3" />
+                        </button>
+                      </div>
+
+                      <span className="w-20 text-right font-semibold text-xs shrink-0 tabular-nums">
+                        EUR {(item.unitPrice * item.quantity).toFixed(2)}
+                      </span>
+
+                      <button
+                        className="shrink-0 text-muted-foreground hover:text-destructive cursor-pointer p-0.5 transition-colors"
+                        onClick={() => removeItem(item.productId)}
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Delivery date for this supplier */}
+                <div className="px-4 py-3 border-t bg-muted/10 flex flex-wrap items-end gap-3">
+                  <div className="flex-1 min-w-[160px]">
+                    <Label className="text-[11px] text-muted-foreground">
+                      Delivery date for {supplierName}
+                    </Label>
+                    <Input
+                      type="date"
+                      className="h-9 text-sm mt-1 cursor-pointer"
+                      value={deliveryDates[supplierId] ?? ""}
+                      onChange={(e) =>
+                        setDeliveryDates((prev) => ({
+                          ...prev,
+                          [supplierId]: e.target.value,
+                        }))
+                      }
+                      min={new Date().toISOString().split("T")[0]}
+                      required
+                    />
+                  </div>
+                  <div className="min-w-30">
+                    <Label className="text-[11px] text-muted-foreground">
+                      Delivery time
+                    </Label>
+                    <Input
+                      type="time"
+                      className="h-9 text-sm mt-1 cursor-pointer"
+                      value={deliveryTimes[supplierId] ?? ""}
+                      onChange={(e) =>
+                        setDeliveryTimes((prev) => ({
+                          ...prev,
+                          [supplierId]: e.target.value,
+                        }))
+                      }
+                    />
+                  </div>
+                  <div className="flex-1 min-w-[160px]">
+                    <Label className="text-[11px] text-muted-foreground">
+                      Notes (optional)
+                    </Label>
+                    <Input
+                      className="h-9 text-sm mt-1"
+                      value={notes[supplierId] ?? ""}
+                      onChange={(e) =>
+                        setNotes((prev) => ({
+                          ...prev,
+                          [supplierId]: e.target.value,
+                        }))
+                      }
+                      placeholder="Special instructions..."
+                    />
+                  </div>
+                  <Link
+                    href={`/restaurant/automations/new?data=${encodeURIComponent(
+                      JSON.stringify(
+                        supplierItems.map((i) => ({
+                          productId: i.productId,
+                          productName: i.productName,
+                          unit: i.unit,
+                          unitPrice: i.unitPrice,
+                          quantity: i.quantity,
+                          supplierId: i.supplierId,
+                          supplierName: i.supplierName,
+                        })),
+                      ),
+                    )}`}
+                    className="inline-flex items-center gap-1.5 h-9 px-3 rounded-lg border text-xs font-medium hover:bg-muted cursor-pointer transition-colors shrink-0"
+                  >
+                    <Repeat className="h-3 w-3" />
+                    Save as Recurring
+                  </Link>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Sidebar summary + single order button */}
+        <div>
+          <div className="sticky top-6 rounded-xl border bg-card p-4 premium-shadow space-y-4">
+            <h3 className="font-semibold text-sm">Order Summary</h3>
+            <div className="space-y-2 text-sm">
+              {supplierIds.map((sid) => {
+                const si = getSupplierItems(sid);
+                const name = si[0]?.supplierName ?? "Supplier";
+                const total = si.reduce(
+                  (s, i) => s + i.unitPrice * i.quantity,
+                  0,
+                );
+                return (
+                  <div key={sid} className="flex justify-between">
+                    <span className="text-muted-foreground truncate mr-2 text-xs">
+                      {name}{" "}
+                      <span className="text-muted-foreground/60">
+                        ({si.length})
+                      </span>
+                    </span>
+                    <span className="font-medium shrink-0 tabular-nums text-xs">
+                      EUR {total.toFixed(2)}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+            <Separator />
+            <div className="flex justify-between font-bold">
+              <span>Total</span>
+              <span className="tabular-nums">EUR {grandTotal.toFixed(2)}</span>
+            </div>
+
+            {supplierIds.length > 1 && (
+              <p className="text-[11px] text-muted-foreground leading-relaxed">
+                This will place {supplierIds.length} separate orders - one per
+                supplier - each with its own delivery date.
+              </p>
+            )}
+
+            <Button
+              className="w-full h-10 font-semibold"
+              onClick={handlePlaceAllOrders}
+              disabled={loading}
+            >
+              {loading ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Placing orders...
+                </>
+              ) : (
+                `Place Order${supplierIds.length > 1 ? "s" : ""}`
+              )}
+            </Button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
