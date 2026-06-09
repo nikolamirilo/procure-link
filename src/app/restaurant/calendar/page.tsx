@@ -1,11 +1,13 @@
 export const dynamic = "force-dynamic";
 
 import { createClient } from "@/lib/supabase/server";
+import { getTranslations } from "next-intl/server";
 import { PageHeader } from "@/components/shared/page-header";
 import { DeliveryCalendar } from "@/components/restaurant/delivery-calendar";
 
 export default async function CalendarPage() {
   const supabase = await createClient();
+  const t = await getTranslations("pageHeaders");
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -17,8 +19,9 @@ export default async function CalendarPage() {
     .single();
 
   // Fetch upcoming orders for the next 30 days
-  const today = new Date().toISOString().split("T")[0];
-  const thirtyDaysOut = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
+  const now = new Date();
+  const today = now.toISOString().split("T")[0];
+  const thirtyDaysOut = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000)
     .toISOString()
     .split("T")[0];
 
@@ -32,10 +35,7 @@ export default async function CalendarPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader
-        title="Delivery Calendar"
-        description="Upcoming deliveries for the next 30 days"
-      />
+      <PageHeader title={t("calendarTitle")} description={t("calendarDesc")} />
       <DeliveryCalendar orders={orders ?? []} />
     </div>
   );

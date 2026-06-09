@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { createProduct, updateProduct } from "@/lib/actions/products";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -38,6 +39,8 @@ interface ProductFormProps {
 }
 
 export function ProductForm({ categories, product }: ProductFormProps) {
+  const t = useTranslations("productForm");
+  const tu = useTranslations("productUnit");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [unit, setUnit] = useState(product?.unit ?? "kg");
@@ -63,31 +66,31 @@ export function ProductForm({ categories, product }: ProductFormProps) {
   return (
     <form action={handleSubmit} className="space-y-4">
       <div className="space-y-2">
-        <Label htmlFor="name">Product Name</Label>
+        <Label htmlFor="name">{t("name")}</Label>
         <Input
           id="name"
           name="name"
           defaultValue={product?.name}
-          placeholder="Fresh Chicken Breast"
+          placeholder={t("namePlaceholder")}
           required
         />
       </div>
       <div className="space-y-2">
-        <Label htmlFor="description">Description</Label>
+        <Label htmlFor="description">{t("description")}</Label>
         <Textarea
           id="description"
           name="description"
           defaultValue={product?.description ?? ""}
-          placeholder="Describe your product..."
+          placeholder={t("descPlaceholder")}
           rows={3}
         />
       </div>
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
-          <Label>Category</Label>
+          <Label>{t("category")}</Label>
           <Select value={categoryId} onValueChange={(v) => v && setCategoryId(v)}>
             <SelectTrigger>
-              <SelectValue placeholder="Select category" />
+              <SelectValue placeholder={t("selectCategory")} />
             </SelectTrigger>
             <SelectContent>
               {categories.map((c) => (
@@ -99,7 +102,7 @@ export function ProductForm({ categories, product }: ProductFormProps) {
           </Select>
         </div>
         <div className="space-y-2">
-          <Label>Unit</Label>
+          <Label>{t("unit")}</Label>
           <Select value={unit} onValueChange={(v) => v && setUnit(v)}>
             <SelectTrigger>
               <SelectValue />
@@ -107,7 +110,7 @@ export function ProductForm({ categories, product }: ProductFormProps) {
             <SelectContent>
               {PRODUCT_UNITS.map((u) => (
                 <SelectItem key={u.value} value={u.value}>
-                  {u.label}
+                  {tu(u.value)}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -116,7 +119,7 @@ export function ProductForm({ categories, product }: ProductFormProps) {
       </div>
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
-          <Label htmlFor="price">Price</Label>
+          <Label htmlFor="price">{t("price")}</Label>
           <Input
             id="price"
             name="price"
@@ -129,7 +132,7 @@ export function ProductForm({ categories, product }: ProductFormProps) {
           />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="minOrderQty">Min Order Qty</Label>
+          <Label htmlFor="minOrderQty">{t("minOrderQty")}</Label>
           <Input
             id="minOrderQty"
             name="minOrderQty"
@@ -145,16 +148,12 @@ export function ProductForm({ categories, product }: ProductFormProps) {
           checked={isAvailable}
           onCheckedChange={(v) => setIsAvailable(v === true)}
         />
-        <Label htmlFor="isAvailable">Available for ordering</Label>
+        <Label htmlFor="isAvailable">{t("available")}</Label>
       </div>
       {error && <p className="text-sm text-destructive">{error}</p>}
       <Button type="submit" className="w-full gap-2" disabled={loading}>
         {loading && <Loader2 className="h-4 w-4 animate-spin" />}
-        {loading
-          ? "Saving..."
-          : product
-            ? "Update Product"
-            : "Create Product"}
+        {loading ? t("saving") : product ? t("update") : t("create")}
       </Button>
     </form>
   );

@@ -1,11 +1,13 @@
 export const dynamic = "force-dynamic";
 
 import { createClient } from "@/lib/supabase/server";
+import { getTranslations } from "next-intl/server";
 import { PageHeader } from "@/components/shared/page-header";
 import { RestaurantOrderList } from "@/components/restaurant/order-list";
 
 export default async function RestaurantOrdersPage() {
   const supabase = await createClient();
+  const t = await getTranslations("pageHeaders");
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -26,10 +28,7 @@ export default async function RestaurantOrdersPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader
-        title="Orders"
-        description="Track your orders and deliveries"
-      />
+      <PageHeader title={t("restaurantOrdersTitle")} description={t("restaurantOrdersDesc")} />
       <RestaurantOrderList orders={orders ?? []} />
     </div>
   );

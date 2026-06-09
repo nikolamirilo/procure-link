@@ -17,6 +17,7 @@ export interface CartItem {
   supplierId: string;
   supplierName: string;
   minQty: number;
+  currency: string;
 }
 
 interface CartContextType {

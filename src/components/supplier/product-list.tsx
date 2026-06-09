@@ -1,6 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
+import { useTranslations, useLocale } from "next-intl";
+import { toast } from "sonner";
 import {
   toggleProductAvailability,
   deleteProduct,
@@ -8,6 +10,7 @@ import {
 import { ProductForm } from "./product-form";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { ConfirmDialog } from "@/components/shared/confirm-dialog";
 import {
   Table,
   TableBody,
@@ -24,6 +27,8 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Pencil, Trash2, Eye, EyeOff, Plus } from "lucide-react";
+import { formatMoney } from "@/lib/format";
+import type { Locale } from "@/i18n/config";
 
 interface Product {
   id: string;
@@ -46,11 +51,32 @@ interface Category {
 export function ProductList({
   products,
   categories,
+  currency = "RSD",
 }: {
   products: Product[];
   categories: Category[];
+  currency?: string;
 }) {
+  const t = useTranslations("productForm");
+  const tu = useTranslations("productUnit");
+  const locale = useLocale() as Locale;
   const [editProduct, setEditProduct] = useState<Product | null>(null);
+  const [, startTransition] = useTransition();
+
+  function toggle(id: string, available: boolean) {
+    startTransition(async () => {
+      const r = await toggleProductAvailability(id, available);
+      if (r?.error) toast.error(r.error);
+    });
+  }
+
+  function remove(id: string) {
+    startTransition(async () => {
+      const r = await deleteProduct(id);
+      if (r?.error) toast.error(r.error);
+      else toast.success(t("deleteConfirmTitle"));
+    });
+  }
 
   return (
     <>
@@ -58,11 +84,11 @@ export function ProductList({
         <Dialog>
           <DialogTrigger className="inline-flex shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground text-sm font-medium h-8 gap-1.5 px-2.5 cursor-pointer hover:bg-primary/90 transition-colors">
             <Plus className="h-4 w-4 mr-2" />
-            Add Product
+            {t("addProduct")}
           </DialogTrigger>
           <DialogContent className="max-w-lg">
             <DialogHeader>
-              <DialogTitle>Add New Product</DialogTitle>
+              <DialogTitle>{t("addNewProduct")}</DialogTitle>
             </DialogHeader>
             <ProductForm categories={categories} />
           </DialogContent>
@@ -71,19 +97,19 @@ export function ProductList({
 
       {products.length === 0 ? (
         <div className="text-center py-12 text-muted-foreground">
-          No products yet. Add your first product to get started.
+          {t("emptyBody")}
         </div>
       ) : (
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Name</TableHead>
-              <TableHead>Category</TableHead>
-              <TableHead>Unit</TableHead>
-              <TableHead className="text-right">Price</TableHead>
-              <TableHead>Min Qty</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
+              <TableHead>{t("thName")}</TableHead>
+              <TableHead>{t("thCategory")}</TableHead>
+              <TableHead>{t("thUnit")}</TableHead>
+              <TableHead className="text-right">{t("thPrice")}</TableHead>
+              <TableHead>{t("thMinQty")}</TableHead>
+              <TableHead>{t("thStatus")}</TableHead>
+              <TableHead className="text-right">{t("thActions")}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -91,16 +117,14 @@ export function ProductList({
               <TableRow key={product.id}>
                 <TableCell className="font-medium">{product.name}</TableCell>
                 <TableCell>{product.categories?.name ?? "-"}</TableCell>
-                <TableCell>{product.unit}</TableCell>
-                <TableCell className="text-right">
-                  EUR {product.price.toFixed(2)}
+                <TableCell>{tu(product.unit)}</TableCell>
+                <TableCell className="text-right tabular-nums">
+                  {formatMoney(product.price, currency, locale)}
                 </TableCell>
                 <TableCell>{product.min_order_qty}</TableCell>
                 <TableCell>
-                  <Badge
-                    variant={product.is_available ? "default" : "secondary"}
-                  >
-                    {product.is_available ? "Available" : "Unavailable"}
+                  <Badge variant={product.is_available ? "default" : "secondary"}>
+                    {product.is_available ? t("available_short") : t("unavailable")}
                   </Badge>
                 </TableCell>
                 <TableCell className="text-right">
@@ -108,42 +132,26 @@ export function ProductList({
                     <Button
                       variant="ghost"
                       size="icon"
-                      onClick={() =>
-                        toggleProductAvailability(
-                          product.id,
-                          !product.is_available,
-                        )
-                      }
-                      title={
-                        product.is_available
-                          ? "Mark unavailable"
-                          : "Mark available"
-                      }
+                      onClick={() => toggle(product.id, !product.is_available)}
+                      title={product.is_available ? t("markUnavailable") : t("markAvailable")}
                     >
-                      {product.is_available ? (
-                        <EyeOff className="h-4 w-4" />
-                      ) : (
-                        <Eye className="h-4 w-4" />
-                      )}
+                      {product.is_available ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                     </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => setEditProduct(product)}
-                    >
+                    <Button variant="ghost" size="icon" onClick={() => setEditProduct(product)}>
                       <Pencil className="h-4 w-4" />
                     </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => {
-                        if (confirm("Delete this product?")) {
-                          deleteProduct(product.id);
-                        }
-                      }}
-                    >
-                      <Trash2 className="h-4 w-4 text-destructive" />
-                    </Button>
+                    <ConfirmDialog
+                      trigger={
+                        <Button variant="ghost" size="icon">
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
+                      }
+                      title={t("deleteConfirmTitle")}
+                      description={t("deleteConfirmBody")}
+                      confirmLabel={t("deleteConfirmTitle")}
+                      variant="destructive"
+                      onConfirm={() => remove(product.id)}
+                    />
                   </div>
                 </TableCell>
               </TableRow>
@@ -155,11 +163,9 @@ export function ProductList({
       <Dialog open={!!editProduct} onOpenChange={() => setEditProduct(null)}>
         <DialogContent className="max-w-lg">
           <DialogHeader>
-            <DialogTitle>Edit Product</DialogTitle>
+            <DialogTitle>{t("editProduct")}</DialogTitle>
           </DialogHeader>
-          {editProduct && (
-            <ProductForm product={editProduct} categories={categories} />
-          )}
+          {editProduct && <ProductForm product={editProduct} categories={categories} />}
         </DialogContent>
       </Dialog>
     </>

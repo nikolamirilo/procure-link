@@ -1,16 +1,18 @@
 export const dynamic = "force-dynamic";
 
 import { createClient } from "@/lib/supabase/server";
+import { getTranslations } from "next-intl/server";
 import { PageHeader } from "@/components/shared/page-header";
 import { ProductBrowser } from "@/components/restaurant/product-browser";
 
 export default async function BrowsePage() {
   const supabase = await createClient();
+  const t = await getTranslations("browse");
 
   const { data: products } = await supabase
     .from("products")
     .select(
-      "*, categories(name), companies!products_supplier_id_fkey(name, slug)"
+      "*, categories(name), companies!products_supplier_id_fkey(name, slug, currency)"
     )
     .eq("is_available", true)
     .order("name");
@@ -33,10 +35,7 @@ export default async function BrowsePage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader
-        title="Browse Products"
-        description="Find products from suppliers"
-      />
+      <PageHeader title={t("title")} description={t("description")} />
       <ProductBrowser
         products={serializedProducts}
         categories={serializedCategories}

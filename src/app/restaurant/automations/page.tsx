@@ -2,11 +2,13 @@ export const dynamic = "force-dynamic";
 
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import { getTranslations } from "next-intl/server";
 import { PageHeader } from "@/components/shared/page-header";
 import { RecurringOrderList } from "@/components/restaurant/recurring-order-list";
 
 export default async function AutomationsPage() {
   const supabase = await createClient();
+  const t = await getTranslations("pageHeaders");
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -51,14 +53,14 @@ export default async function AutomationsPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Automations"
-        description="Set up recurring orders that are placed automatically"
+        title={t("automationsTitle")}
+        description={t("automationsDesc")}
         action={
           <Link
             href="/restaurant/automations/new"
             className="inline-flex h-9 items-center justify-center rounded-lg bg-primary px-4 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors cursor-pointer"
           >
-            + New Automation
+            + {t("newAutomationTitle")}
           </Link>
         }
       />

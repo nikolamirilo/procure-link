@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { signUp } from "@/lib/actions/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,21 +13,12 @@ import { Logo } from "@/components/shared/logo";
 import { cn } from "@/lib/utils";
 
 const companyTypes = [
-  {
-    value: "restaurant" as CompanyType,
-    label: "Restaurant",
-    description: "Order supplies for your restaurant",
-    icon: UtensilsCrossed,
-  },
-  {
-    value: "supplier" as CompanyType,
-    label: "Supplier",
-    description: "Sell products to restaurants",
-    icon: Building2,
-  },
+  { value: "restaurant" as CompanyType, labelKey: "restaurant", descKey: "restaurantDesc", icon: UtensilsCrossed },
+  { value: "supplier" as CompanyType, labelKey: "supplier", descKey: "supplierDesc", icon: Building2 },
 ];
 
 export default function RegisterPage() {
+  const t = useTranslations("auth");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [companyType, setCompanyType] = useState<CompanyType>("restaurant");
@@ -49,10 +41,8 @@ export default function RegisterPage() {
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_50%,rgba(255,255,255,0.12)_0%,transparent_60%)]" />
         <div className="relative text-center space-y-4 px-12 max-w-md">
           <Logo size="xl" showText={false} variant="light" className="justify-center" />
-          <h2 className="text-3xl font-bold text-white">Join ProcureLink</h2>
-          <p className="text-white/70 text-lg leading-relaxed">
-            Create your account and start streamlining your supply chain today.
-          </p>
+          <h2 className="text-3xl font-bold text-white">{t("joinTitle")}</h2>
+          <p className="text-white/70 text-lg leading-relaxed">{t("joinBody")}</p>
         </div>
       </div>
 
@@ -63,16 +53,14 @@ export default function RegisterPage() {
             <div className="lg:hidden flex justify-center mb-6">
               <Logo />
             </div>
-            <h1 className="text-2xl font-bold tracking-tight">Create account</h1>
-            <p className="text-muted-foreground mt-1 text-sm">
-              Choose your role and get started
-            </p>
+            <h1 className="text-2xl font-bold tracking-tight">{t("signUpTitle")}</h1>
+            <p className="text-muted-foreground mt-1 text-sm">{t("createSub")}</p>
           </div>
 
           <form action={handleSubmit} className="space-y-5">
             {/* Company type selector */}
             <div className="space-y-2">
-              <Label>I am a</Label>
+              <Label>{t("iAm")}</Label>
               <div className="grid gap-2">
                 {companyTypes.map((r) => {
                   const Icon = r.icon;
@@ -98,8 +86,8 @@ export default function RegisterPage() {
                         <Icon className="h-4 w-4" />
                       </div>
                       <div>
-                        <p className="text-sm font-medium">{r.label}</p>
-                        <p className="text-xs text-muted-foreground">{r.description}</p>
+                        <p className="text-sm font-medium">{t(r.labelKey)}</p>
+                        <p className="text-xs text-muted-foreground">{t(r.descKey)}</p>
                       </div>
                     </button>
                   );
@@ -108,17 +96,28 @@ export default function RegisterPage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="fullName">Full Name</Label>
-              <Input id="fullName" name="fullName" placeholder="John Doe" className="h-11" required />
+              <Label htmlFor="fullName">{t("fullName")}</Label>
+              <Input id="fullName" name="fullName" placeholder={t("fullNamePlaceholder")} className="h-11" required />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email">{t("email")}</Label>
               <Input id="email" name="email" type="email" placeholder="you@example.com" className="h-11" required />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
-              <Input id="password" name="password" type="password" placeholder="Min 6 characters" className="h-11" minLength={6} required />
+              <Label htmlFor="password">{t("password")}</Label>
+              <Input id="password" name="password" type="password" placeholder={t("passwordPlaceholder")} className="h-11" minLength={8} required />
             </div>
+
+            <p className="text-xs text-muted-foreground leading-relaxed">
+              {t.rich("privacyNotice", {
+                terms: (chunks) => (
+                  <Link href="/terms" className="text-primary hover:underline">{chunks}</Link>
+                ),
+                privacy: (chunks) => (
+                  <Link href="/privacy" className="text-primary hover:underline">{chunks}</Link>
+                ),
+              })}
+            </p>
 
             {error && (
               <div className="rounded-lg bg-destructive/10 border border-destructive/20 px-4 py-3 text-sm text-destructive">
@@ -127,14 +126,14 @@ export default function RegisterPage() {
             )}
             <Button type="submit" className="w-full h-11 text-sm font-semibold gap-2" disabled={loading}>
               {loading && <Loader2 className="h-4 w-4 animate-spin" />}
-              {loading ? "Creating account..." : "Create Account"}
+              {loading ? t("creatingAccount") : t("signUpCta")}
             </Button>
           </form>
 
           <p className="text-center text-sm text-muted-foreground">
-            Already have an account?{" "}
+            {t("haveAccount")}{" "}
             <Link href="/login" className="text-primary font-medium hover:underline">
-              Sign In
+              {t("signInCta")}
             </Link>
           </p>
         </div>

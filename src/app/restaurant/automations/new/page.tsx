@@ -1,6 +1,7 @@
 export const dynamic = "force-dynamic";
 
 import { createClient } from "@/lib/supabase/server";
+import { getTranslations } from "next-intl/server";
 import { PageHeader } from "@/components/shared/page-header";
 import { RecurringOrderForm } from "@/components/restaurant/recurring-order-form";
 
@@ -11,6 +12,7 @@ interface Props {
 export default async function NewAutomationPage({ searchParams }: Props) {
   const params = await searchParams;
   const supabase = await createClient();
+  const t = await getTranslations("pageHeaders");
 
   // Fetch suppliers
   const { data: suppliers } = await supabase
@@ -47,10 +49,7 @@ export default async function NewAutomationPage({ searchParams }: Props) {
 
   return (
     <div className="space-y-6">
-      <PageHeader
-        title="New Automation"
-        description="Create a recurring order that runs on a schedule"
-      />
+      <PageHeader title={t("newAutomationTitle")} description={t("newAutomationDesc")} />
       <RecurringOrderForm
         suppliers={suppliers ?? []}
         products={products ?? []}

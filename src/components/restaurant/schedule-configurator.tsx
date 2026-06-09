@@ -1,6 +1,7 @@
 "use client";
 
-import { ISO_DAYS, ISO_DAYS_FULL } from "@/lib/constants";
+import { useTranslations } from "next-intl";
+import { ISO_DAYS } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 
 interface ScheduleConfiguratorProps {
@@ -10,22 +11,15 @@ interface ScheduleConfiguratorProps {
   onScheduleDaysChange: (days: number[]) => void;
 }
 
-function getOrdinalSuffix(n: number) {
-  if (n >= 11 && n <= 13) return "th";
-  switch (n % 10) {
-    case 1: return "st";
-    case 2: return "nd";
-    case 3: return "rd";
-    default: return "th";
-  }
-}
-
 export function ScheduleConfigurator({
   frequency,
   scheduleDays,
   onFrequencyChange,
   onScheduleDaysChange,
 }: ScheduleConfiguratorProps) {
+  const t = useTranslations("recurring");
+  const td = useTranslations("days");
+
   function toggleDay(day: number) {
     if (scheduleDays.includes(day)) {
       onScheduleDaysChange(scheduleDays.filter((d) => d !== day));
@@ -34,19 +28,13 @@ export function ScheduleConfigurator({
     }
   }
 
-  // Human-readable summary
   function getSummary() {
-    if (frequency === "daily") return "Every day";
-    if (scheduleDays.length === 0) return "No days selected";
+    if (frequency === "daily") return t("everyDay");
+    if (scheduleDays.length === 0) return t("noDaysSelected");
     if (frequency === "weekly") {
-      const names = scheduleDays.map(
-        (d) => ISO_DAYS_FULL.find((i) => i.value === d)?.label ?? ""
-      );
-      return `Every ${names.join(", ")}`;
-    } else {
-      const parts = scheduleDays.map((d) => `${d}${getOrdinalSuffix(d)}`);
-      return `${parts.join(", ")} of each month`;
+      return scheduleDays.map((d) => td(String(d))).join(", ");
     }
+    return scheduleDays.map((d) => `${d}.`).join(", ") + t("ofEachMonth");
   }
 
   return (
@@ -66,7 +54,7 @@ export function ScheduleConfigurator({
               : "bg-muted/50 text-muted-foreground hover:bg-muted"
           )}
         >
-          Daily
+          {t("daily")}
         </button>
         <button
           type="button"
@@ -81,7 +69,7 @@ export function ScheduleConfigurator({
               : "bg-muted/50 text-muted-foreground hover:bg-muted"
           )}
         >
-          Weekly
+          {t("weekly")}
         </button>
         <button
           type="button"
@@ -96,15 +84,13 @@ export function ScheduleConfigurator({
               : "bg-muted/50 text-muted-foreground hover:bg-muted"
           )}
         >
-          Monthly
+          {t("monthly")}
         </button>
       </div>
 
       {/* Day picker */}
       {frequency === "daily" ? (
-        <p className="text-sm text-muted-foreground py-2">
-          Orders will be placed automatically every day.
-        </p>
+        <p className="text-sm text-muted-foreground py-2">{t("dailyBody")}</p>
       ) : frequency === "weekly" ? (
         <div className="flex gap-1.5 flex-wrap">
           {ISO_DAYS.map((day) => {
@@ -121,7 +107,7 @@ export function ScheduleConfigurator({
                     : "bg-muted text-muted-foreground hover:bg-muted/80"
                 )}
               >
-                {day.label}
+                {td(`short.${day.value}`)}
               </button>
             );
           })}

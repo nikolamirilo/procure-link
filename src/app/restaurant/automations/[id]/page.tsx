@@ -16,7 +16,7 @@ export default async function AutomationDetailPage({ params }: Props) {
   const { data: order } = await supabase
     .from("recurring_orders")
     .select(
-      "*, companies!recurring_orders_supplier_id_fkey(name)"
+      "*, companies!recurring_orders_supplier_id_fkey(name, currency)"
     )
     .eq("id", id)
     .single();
@@ -78,10 +78,11 @@ export default async function AutomationDetailPage({ params }: Props) {
         next_run_at: order.next_run_at,
         last_run_at: order.last_run_at,
         created_at: order.created_at,
-        supplier_name: (order.companies as { name: string } | null)?.name ?? "Unknown",
+        supplier_name: (order.companies as { name: string } | null)?.name ?? "-",
         items: items ?? [],
         runs,
       }}
+      currency={(order.companies as unknown as { currency?: string } | null)?.currency ?? "RSD"}
     />
   );
 }

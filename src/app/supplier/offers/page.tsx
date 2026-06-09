@@ -1,20 +1,25 @@
 export const dynamic = "force-dynamic";
 
 import { createClient } from "@/lib/supabase/server";
+import { getTranslations } from "next-intl/server";
 import { PageHeader } from "@/components/shared/page-header";
 import { OfferList } from "@/components/supplier/offer-list";
 
 export default async function OffersPage() {
   const supabase = await createClient();
+  const t = await getTranslations("pageHeaders");
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("company_id")
+    .select("company_id, companies!profiles_company_id_fkey(currency)")
     .eq("id", user!.id)
     .single();
+
+  const currency =
+    (profile?.companies as unknown as { currency?: string } | null)?.currency ?? "RSD";
 
   const { data: offers } = await supabase
     .from("offers")
@@ -31,11 +36,8 @@ export default async function OffersPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader
-        title="Offers"
-        description="Manage discounts and promotions on your products"
-      />
-      <OfferList offers={offers ?? []} products={products ?? []} />
+      <PageHeader title={t("offersTitle")} description={t("offersDesc")} />
+      <OfferList offers={offers ?? []} products={products ?? []} currency={currency} />
     </div>
   );
 }

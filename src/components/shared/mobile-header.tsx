@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 import { Menu, X } from "lucide-react";
 import { useState } from "react";
 import { Logo } from "@/components/shared/logo";
+import { LanguageSwitcher } from "@/components/shared/language-switcher";
 import type { LucideIcon } from "lucide-react";
 
 interface NavItem {
@@ -28,9 +29,12 @@ export function MobileHeader({
     <div className="md:hidden">
       <div className="flex h-14 items-center justify-between border-b bg-background px-4">
         <Logo size="sm" />
-        <button onClick={() => setOpen(!open)} className="p-2">
-          {open ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-        </button>
+        <div className="flex items-center gap-2">
+          <LanguageSwitcher />
+          <button onClick={() => setOpen(!open)} className="p-2">
+            {open ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+          </button>
+        </div>
       </div>
       {open && (
         <nav className="border-b bg-background px-4 py-3 space-y-1">

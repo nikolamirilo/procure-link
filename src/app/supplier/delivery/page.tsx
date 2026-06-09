@@ -1,11 +1,13 @@
 export const dynamic = "force-dynamic";
 
 import { createClient } from "@/lib/supabase/server";
+import { getTranslations } from "next-intl/server";
 import { PageHeader } from "@/components/shared/page-header";
 import { DeliverySlotManager } from "@/components/supplier/delivery-slot-manager";
 
 export default async function DeliveryPage() {
   const supabase = await createClient();
+  const t = await getTranslations("pageHeaders");
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -25,10 +27,7 @@ export default async function DeliveryPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader
-        title="Delivery Slots"
-        description="Manage your weekly delivery schedule"
-      />
+      <PageHeader title={t("deliveryTitle")} description={t("deliveryDesc")} />
       <DeliverySlotManager slots={slots ?? []} />
     </div>
   );

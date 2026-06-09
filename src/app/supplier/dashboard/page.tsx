@@ -1,11 +1,13 @@
 export const dynamic = "force-dynamic";
 
 import { createClient } from "@/lib/supabase/server";
+import { getTranslations } from "next-intl/server";
 import { PageHeader } from "@/components/shared/page-header";
-import { Package, ClipboardList, Tag, Truck, TrendingUp, DollarSign } from "lucide-react";
+import { Package, ClipboardList, Tag, Truck } from "lucide-react";
 
 export default async function SupplierDashboard() {
   const supabase = await createClient();
+  const t = await getTranslations("dashboard");
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -44,41 +46,17 @@ export default async function SupplierDashboard() {
     ]);
 
   const stats = [
-    {
-      title: "Total Products",
-      value: productsRes.count ?? 0,
-      icon: Package,
-      color: "text-blue-600",
-      bg: "bg-blue-50",
-    },
-    {
-      title: "Total Orders",
-      value: ordersRes.count ?? 0,
-      icon: ClipboardList,
-      color: "text-teal-600",
-      bg: "bg-teal-50",
-    },
-    {
-      title: "Active Offers",
-      value: activeOffersRes.count ?? 0,
-      icon: Tag,
-      color: "text-amber-600",
-      bg: "bg-amber-50",
-    },
-    {
-      title: "Pending Orders",
-      value: pendingOrdersRes.count ?? 0,
-      icon: Truck,
-      color: "text-purple-600",
-      bg: "bg-purple-50",
-    },
+    { title: t("products"), value: productsRes.count ?? 0, icon: Package, color: "text-blue-600", bg: "bg-blue-50" },
+    { title: t("totalOrders"), value: ordersRes.count ?? 0, icon: ClipboardList, color: "text-teal-600", bg: "bg-teal-50" },
+    { title: t("myOffers"), value: activeOffersRes.count ?? 0, icon: Tag, color: "text-amber-600", bg: "bg-amber-50" },
+    { title: t("pending"), value: pendingOrdersRes.count ?? 0, icon: Truck, color: "text-purple-600", bg: "bg-purple-50" },
   ];
 
   return (
     <div className="space-y-8">
       <PageHeader
-        title={`Welcome back, ${profile?.full_name ?? "Supplier"}`}
-        description="Here's an overview of your supply business"
+        title={t("welcome", { name: profile?.full_name ?? t("fallbackSupplier") })}
+        description={t("overviewSupplier")}
       />
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
@@ -109,13 +87,13 @@ export default async function SupplierDashboard() {
 
       {/* Quick actions */}
       <div className="rounded-2xl border bg-card p-6 premium-shadow">
-        <h2 className="font-semibold text-lg mb-4">Quick Actions</h2>
+        <h2 className="font-semibold text-lg mb-4">{t("quickActions")}</h2>
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {[
-            { label: "Add Product", href: "/supplier/products", icon: Package },
-            { label: "Create Offer", href: "/supplier/offers", icon: Tag },
-            { label: "View Orders", href: "/supplier/orders", icon: ClipboardList },
-            { label: "Manage Delivery", href: "/supplier/delivery", icon: Truck },
+            { label: t("addProduct"), href: "/supplier/products", icon: Package },
+            { label: t("myOffers"), href: "/supplier/offers", icon: Tag },
+            { label: t("viewOrders"), href: "/supplier/orders", icon: ClipboardList },
+            { label: t("deliverySlots"), href: "/supplier/delivery", icon: Truck },
           ].map((action) => {
             const Icon = action.icon;
             return (

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Logo } from "@/components/shared/logo";
+import { LanguageSwitcher } from "@/components/shared/language-switcher";
 import { HeroAnimation } from "@/components/landing/hero-animation";
 import { HowItWorksAnimation } from "@/components/landing/how-it-works-animation";
 import {
@@ -37,143 +38,123 @@ import {
 const features = [
   {
     icon: ShoppingCart,
-    title: "One cart, every supplier",
+    title: "Jedna korpa, svi dobavljači",
     description:
-      "Add products from any supplier in your network. Checkout once - we split it into the right orders behind the scenes.",
+      "Dodajte proizvode od bilo kog dobavljača u vašoj mreži. Jedno plaćanje - mi ga delimo na prave porudžbine u pozadini.",
   },
   {
     icon: Repeat,
-    title: "Automate the recurring stuff",
+    title: "Automatizujte ponavljajuće porudžbine",
     description:
-      "The salmon every Tuesday, the herbs every Thursday. Set it once and the orders place themselves on schedule.",
+      "Losos svakog utorka, začini svakog četvrtka. Podesite jednom i porudžbine se same šalju po rasporedu.",
   },
   {
     icon: CalendarDays,
-    title: "Delivery you can see",
+    title: "Isporuka koju vidite",
     description:
-      "A month-view calendar of every incoming delivery. Your kitchen knows what is landing and when, at a glance.",
+      "Mesečni kalendar svih dolazećih isporuka. Vaša kuhinja zna šta stiže i kada, na prvi pogled.",
   },
   {
     icon: Truck,
-    title: "Slot-aware ordering",
+    title: "Poručivanje prema terminima",
     description:
-      "Each supplier publishes their delivery windows. The app blocks dates they can't make - no more orders that quietly don't arrive.",
+      "Svaki dobavljač objavljuje termine isporuke. Aplikacija blokira datume koje ne mogu da ispune - nema više porudžbina koje tiho ne stignu.",
   },
   {
     icon: Shield,
-    title: "Real audit trail",
+    title: "Potpuna evidencija",
     description:
-      "Every status change, every payment update, every cancellation - timestamped and visible to both sides. No more 'who said what.'",
+      "Svaka promena statusa, plaćanja i otkazivanja - sa vremenskom oznakom i vidljiva obema stranama. Nema više 'ko je šta rekao'.",
   },
   {
     icon: Globe,
-    title: "Multi-currency by default",
+    title: "RSD i EUR",
     description:
-      "Each supplier prices in their own currency. EUR, GBP, USD, RSD, CHF, CAD, AUD - the order respects whoever you are buying from.",
+      "Cene u dinarima ili evrima - porudžbina poštuje valutu dobavljača od kog kupujete.",
   },
 ];
 
 const steps = [
   {
     step: "01",
-    title: "Browse the catalog",
+    title: "Pregledajte katalog",
     description:
-      "See products from every connected supplier in one place. Filter by category. Compare prices side-by-side.",
+      "Proizvodi svih povezanih dobavljača na jednom mestu. Filtrirajte po kategoriji. Uporedite cene jednu pored druge.",
   },
   {
     step: "02",
-    title: "Checkout once",
+    title: "Plaćanje jednom",
     description:
-      "Add anything to one cart - even across five suppliers. Pick a delivery date. Confirm. We handle the splitting.",
+      "Dodajte sve u jednu korpu - čak i od pet dobavljača. Izaberite datum isporuke. Potvrdite. Mi delimo porudžbine.",
   },
   {
     step: "03",
-    title: "Track and receive",
+    title: "Pratite i primajte",
     description:
-      "Watch each order move through pending, confirmed, dispatched, delivered. Mark issues when they happen.",
+      "Pratite svaku porudžbinu kroz statuse: na čekanju, potvrđeno, poslato, isporučeno. Označite probleme čim nastanu.",
   },
   {
     step: "04",
-    title: "Automate what repeats",
+    title: "Automatizujte ono što se ponavlja",
     description:
-      "Turn any cart into a recurring order. Weekly, biweekly, monthly. Edit anytime. Pause anytime.",
+      "Pretvorite bilo koju korpu u ponavljajuću porudžbinu. Nedeljno, dvonedeljno, mesečno. Menjajte i pauzirajte bilo kada.",
   },
 ];
 
 const betaPromises = [
-  { icon: Sparkles, label: "Free during beta" },
-  { icon: Clock, label: "5-minute setup" },
-  { icon: Shield, label: "EU-hosted infrastructure" },
-  { icon: Lock, label: "No card required" },
+  { icon: Sparkles, label: "Besplatno tokom bete" },
+  { icon: Clock, label: "Podešavanje za 5 minuta" },
+  { icon: Shield, label: "Infrastruktura u EU" },
+  { icon: Lock, label: "Bez kartice" },
 ];
 
 const pilotBenefits = [
   {
     icon: MessageCircle,
-    title: "Direct line to the founder",
+    title: "Direktna linija sa osnivačem",
     description:
-      "Your messages get answered the same day. The product team is one person and you can talk to them.",
+      "Na vaše poruke odgovaramo istog dana. Tim je mali i možete razgovarati direktno sa nama.",
   },
   {
     icon: Map,
-    title: "Shape the roadmap",
+    title: "Oblikujte razvoj proizvoda",
     description:
-      "The features we ship next are the features pilot members ask for. You are not waiting in a queue behind enterprise.",
+      "Funkcije koje sledeće gradimo su one koje članovi pilota traže. Ne čekate u redu iza velikih klijenata.",
   },
   {
     icon: Lock,
-    title: "Locked launch pricing",
+    title: "Zaključana cena za rane korisnike",
     description:
-      "Whatever we charge after beta, pilot members get 50% off for life. We will not surprise you with the bill.",
+      "Koliko god naplaćivali posle bete, članovi pilota dobijaju 50% popusta zauvek. Bez iznenađenja na računu.",
   },
 ];
 
+// Aligned with src/lib/plans.ts and docs/sql/007_subscriptions.sql.
 const supplierTiers = [
   {
-    name: "Free",
-    price: "EUR 0",
-    period: "/month",
-    tagline: "Get listed and start receiving orders.",
+    name: "Basic",
+    priceRsd: "2.900 RSD",
+    priceEur: "25 EUR",
+    tagline: "Za dobavljače koji počinju da primaju porudžbine.",
     features: [
-      "Up to 25 products",
-      "Up to 20 orders / month",
-      "Basic delivery scheduling",
-      "1 team seat",
-      "Email support",
+      "Neograničen katalog proizvoda",
+      "Prijem i obrada porudžbina",
+      "Termini isporuke i kalendar",
     ],
-    cta: "Start free",
     highlighted: false,
   },
   {
-    name: "Growth",
-    price: "EUR 49",
-    period: "/month",
-    tagline: "For suppliers running real order volume.",
+    name: "Pro",
+    priceRsd: "5.900 RSD",
+    priceEur: "49 EUR",
+    tagline: "Za dobavljače sa ozbiljnim obimom porudžbina.",
     features: [
-      "Unlimited products",
-      "Unlimited orders",
-      "Full delivery scheduling",
-      "Recurring-order fulfilment",
-      "Verified-supplier badge",
-      "Basic analytics",
-      "Same-day email support",
+      "Sve iz Basic plana",
+      "Direktna podrška osnivača",
+      "Napredni izveštaji",
+      "Verifikovan dobavljač - oznaka",
     ],
-    cta: "Choose Growth",
     highlighted: true,
-  },
-  {
-    name: "Scale",
-    price: "EUR 99",
-    period: "/month",
-    tagline: "For larger suppliers and teams.",
-    features: [
-      "Everything in Growth",
-      "Up to 5 team seats",
-      "Advanced analytics",
-      "Priority support + onboarding call",
-    ],
-    cta: "Choose Scale",
-    highlighted: false,
   },
 ];
 
@@ -185,23 +166,24 @@ export default function HomePage() {
         <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
           <Logo />
           <div className="hidden md:flex items-center gap-8">
-            <a href="#features" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Features</a>
-            <a href="#how-it-works" className="text-sm text-muted-foreground hover:text-foreground transition-colors">How it works</a>
-            <a href="#beta" className="text-sm text-muted-foreground hover:text-foreground transition-colors">The beta</a>
-            <a href="#pricing" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Pricing</a>
+            <a href="#features" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Mogućnosti</a>
+            <a href="#how-it-works" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Kako funkcioniše</a>
+            <a href="#beta" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Beta</a>
+            <a href="#pricing" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Cene</a>
           </div>
           <div className="flex items-center gap-3">
+            <LanguageSwitcher />
             <Link
               href="/login"
               className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors px-3 py-2"
             >
-              Sign in
+              Prijava
             </Link>
             <Link
               href="/register"
               className="inline-flex h-9 items-center justify-center rounded-lg bg-primary px-5 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-all active:scale-[0.98]"
             >
-              Join the beta
+              Pridruži se beti
             </Link>
           </div>
         </div>
@@ -213,38 +195,36 @@ export default function HomePage() {
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_20%,var(--color-brand-100)_0%,transparent_30%)] pointer-events-none opacity-50" />
         <div className="max-w-7xl mx-auto px-6 pt-20 pb-16 md:pt-28 md:pb-24 relative">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
-            {/* Left: copy */}
             <FadeIn className="space-y-8">
               <div className="inline-flex items-center gap-2 rounded-full border px-4 py-1.5 text-sm font-medium text-muted-foreground bg-background/80 backdrop-blur-sm">
                 <span className="relative flex h-2 w-2">
                   <span className="absolute inline-flex h-full w-full rounded-full bg-emerald-500 opacity-75 animate-ping" />
                   <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
                 </span>
-                Private beta - cohort 1 open
+                Privatna beta - prva grupa je otvorena
               </div>
               <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight leading-[1.08]">
-                Restaurant supply,{" "}
-                <span className="gradient-text">simplified</span>
+                Snabdevanje restorana,{" "}
+                <span className="gradient-text">pojednostavljeno</span>
               </h1>
               <p className="text-lg text-muted-foreground max-w-xl leading-relaxed">
-                One inbox for every supplier. Browse catalogs, place orders across vendors in a single checkout, and automate the recurring stuff. Built for kitchens tired of phone calls and spreadsheets.
+                Jedno mesto za sve dobavljače. Pregledajte kataloge, poručujte od više dobavljača u jednom plaćanju i automatizujte ono što se ponavlja. Napravljeno za kuhinje umorne od telefonskih poziva i tabela.
               </p>
               <div className="flex flex-col sm:flex-row gap-3">
                 <Link
                   href="/register"
                   className="inline-flex h-12 items-center justify-center rounded-xl bg-primary px-8 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-all hover:shadow-lg hover:shadow-primary/25 active:scale-[0.98] gap-2"
                 >
-                  Join the beta
+                  Pridruži se beti
                   <ArrowRight className="h-4 w-4" />
                 </Link>
                 <a
                   href="#how-it-works"
                   className="inline-flex h-12 items-center justify-center rounded-xl border-2 border-border bg-background px-8 text-sm font-semibold hover:bg-muted transition-all active:scale-[0.98]"
                 >
-                  See how it works
+                  Pogledaj kako radi
                 </a>
               </div>
-              {/* Beta promises */}
               <div className="grid grid-cols-2 gap-3 pt-2 max-w-md">
                 {betaPromises.map((p) => {
                   const Icon = p.icon;
@@ -257,7 +237,6 @@ export default function HomePage() {
                 })}
               </div>
             </FadeIn>
-            {/* Right: illustration animation */}
             <FadeIn delay={0.2} className="hidden lg:block">
               <HeroAnimation />
             </FadeIn>
@@ -265,28 +244,28 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ===== PROBLEM / WHY NOW ===== */}
+      {/* ===== PROBLEM ===== */}
       <section className="border-y bg-muted/30">
         <div className="max-w-7xl mx-auto px-6 py-16 md:py-20">
           <div className="grid md:grid-cols-2 gap-10 lg:gap-16 items-start">
             <Reveal>
               <div className="inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold text-primary bg-primary/5 mb-4">
-                THE PROBLEM
+                PROBLEM
               </div>
               <h2 className="text-2xl md:text-3xl font-bold tracking-tight leading-tight">
-                Restaurant procurement still runs on{" "}
-                <span className="gradient-text">WhatsApp and PDFs</span>
+                Nabavka u restoranima i dalje radi preko{" "}
+                <span className="gradient-text">Vibera i PDF-ova</span>
               </h2>
             </Reveal>
             <Reveal delay={0.1} className="space-y-4 text-muted-foreground leading-relaxed">
               <p>
-                Most kitchens manage 6 to 12 suppliers. Each one wants orders in their own format - WhatsApp, email, a PDF, a phone call before 9pm.
+                Većina kuhinja radi sa 6 do 12 dobavljača. Svaki traži porudžbine u svom formatu - Viber, imejl, PDF, poziv pre 21h.
               </p>
               <p>
-                Mistakes hide in that mess. A missed Tuesday order. A double-charge nobody catches until invoice day. A delivery slot the supplier never confirmed.
+                Greške se kriju u tom haosu. Propušten utorak. Dupla naplata koju niko ne primeti do dana fakturisanja. Termin isporuke koji dobavljač nikada nije potvrdio.
               </p>
               <p className="text-foreground font-medium">
-                ProcureLink replaces the mess with one workflow both sides can see.
+                ProcureLink zamenjuje haos jednim tokom rada koji obe strane vide.
               </p>
             </Reveal>
           </div>
@@ -299,14 +278,14 @@ export default function HomePage() {
           <Reveal>
             <div className="text-center mb-16 max-w-2xl mx-auto">
               <div className="inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold text-primary bg-primary/5 mb-4">
-                WHAT YOU GET
+                ŠTA DOBIJATE
               </div>
               <h2 className="text-3xl md:text-4xl font-bold tracking-tight">
-                The whole procurement workflow,{" "}
-                <span className="gradient-text">in one product</span>
+                Ceo tok nabavke,{" "}
+                <span className="gradient-text">u jednom proizvodu</span>
               </h2>
               <p className="text-muted-foreground mt-4 text-lg">
-                Not a marketplace listing tool. Not a fancy order form. The full loop from discovery to delivery to repeat.
+                Nije samo alat za oglašavanje. Nije obična porudžbenica. Ceo krug od pronalaska do isporuke do ponavljanja.
               </p>
             </div>
           </Reveal>
@@ -320,12 +299,8 @@ export default function HomePage() {
                       <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center mb-5 group-hover:bg-primary/15 transition-colors">
                         <Icon className="h-6 w-6 text-primary" />
                       </div>
-                      <h3 className="font-semibold text-lg mb-2">
-                        {feature.title}
-                      </h3>
-                      <p className="text-muted-foreground text-sm leading-relaxed">
-                        {feature.description}
-                      </p>
+                      <h3 className="font-semibold text-lg mb-2">{feature.title}</h3>
+                      <p className="text-muted-foreground text-sm leading-relaxed">{feature.description}</p>
                     </div>
                   </HoverLift>
                 </StaggerItem>
@@ -341,11 +316,11 @@ export default function HomePage() {
           <div className="grid lg:grid-cols-2 gap-16 items-center">
             <div>
               <div className="inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold text-primary bg-primary/5 mb-4">
-                HOW IT WORKS
+                KAKO FUNKCIONIŠE
               </div>
               <h2 className="text-3xl md:text-4xl font-bold tracking-tight mb-12">
-                From sign-up to first order in{" "}
-                <span className="gradient-text">under 10 minutes</span>
+                Od registracije do prve porudžbine za{" "}
+                <span className="gradient-text">manje od 10 minuta</span>
               </h2>
               <Stagger className="space-y-8">
                 {steps.map((step) => (
@@ -358,9 +333,7 @@ export default function HomePage() {
                       </div>
                       <div>
                         <h3 className="font-semibold text-lg">{step.title}</h3>
-                        <p className="text-muted-foreground text-sm mt-1 leading-relaxed">
-                          {step.description}
-                        </p>
+                        <p className="text-muted-foreground text-sm mt-1 leading-relaxed">{step.description}</p>
                       </div>
                     </div>
                   </StaggerItem>
@@ -377,25 +350,24 @@ export default function HomePage() {
       {/* ===== FOR RESTAURANTS + SUPPLIERS ===== */}
       <section className="py-24 md:py-32">
         <div className="max-w-7xl mx-auto px-6 space-y-24">
-          {/* Restaurants */}
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             <div className="space-y-6">
               <div className="inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold text-primary bg-primary/5">
-                FOR RESTAURANTS
+                ZA RESTORANE
               </div>
               <h2 className="text-3xl md:text-4xl font-bold tracking-tight leading-tight">
-                Stop chasing your suppliers.{" "}
-                <span className="gradient-text">Run procurement like a workflow.</span>
+                Prestanite da jurite dobavljače.{" "}
+                <span className="gradient-text">Vodite nabavku kao tok rada.</span>
               </h2>
               <p className="text-muted-foreground text-lg leading-relaxed">
-                Browse products from every supplier you work with. Compare at a glance. Order from five at once and pick a delivery day each. Set the salmon, the bread, the dairy to repeat on the right schedule and stop thinking about them.
+                Pregledajte proizvode svih dobavljača sa kojima radite. Uporedite na prvi pogled. Poručite od petoro odjednom i izaberite dan isporuke za svakog. Podesite da se losos, hleb i mlečni proizvodi ponavljaju po pravom rasporedu i prestanite da brinete o njima.
               </p>
               <ul className="space-y-3">
                 {[
-                  "Catalogs from every supplier in your network",
-                  "One cart across multiple suppliers, one checkout",
-                  "Recurring orders on daily, weekly, or monthly cadence",
-                  "Delivery calendar shows every incoming order at a glance",
+                  "Katalozi svih dobavljača u vašoj mreži",
+                  "Jedna korpa za više dobavljača, jedno plaćanje",
+                  "Ponavljajuće porudžbine dnevno, nedeljno ili mesečno",
+                  "Kalendar isporuka prikazuje svaku dolazeću porudžbinu",
                 ].map((item) => (
                   <li key={item} className="flex items-center gap-3 text-sm">
                     <div className="h-5 w-5 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
@@ -405,11 +377,8 @@ export default function HomePage() {
                   </li>
                 ))}
               </ul>
-              <Link
-                href="/register"
-                className="inline-flex items-center gap-2 text-sm font-semibold text-primary hover:underline"
-              >
-                Join the beta as a restaurant <ChevronRight className="h-4 w-4" />
+              <Link href="/register" className="inline-flex items-center gap-2 text-sm font-semibold text-primary hover:underline">
+                Pridruži se beti kao restoran <ChevronRight className="h-4 w-4" />
               </Link>
             </div>
             <div className="rounded-2xl bg-gradient-to-br from-primary/5 via-primary/10 to-primary/5 p-6 border">
@@ -418,18 +387,18 @@ export default function HomePage() {
                   <div className="h-2.5 w-2.5 rounded-full bg-red-400" />
                   <div className="h-2.5 w-2.5 rounded-full bg-yellow-400" />
                   <div className="h-2.5 w-2.5 rounded-full bg-green-400" />
-                  <span className="text-[10px] text-muted-foreground ml-2">Browse Products</span>
+                  <span className="text-[10px] text-muted-foreground ml-2">Pregled proizvoda</span>
                 </div>
                 <div className="p-5 space-y-4">
                   <div className="flex items-center gap-2 rounded-lg border px-3 py-2">
                     <Search className="h-3.5 w-3.5 text-muted-foreground" />
-                    <span className="text-xs text-muted-foreground">Search fresh produce, dairy, meat...</span>
+                    <span className="text-xs text-muted-foreground">Pretraži povrće, mlečne proizvode, meso...</span>
                   </div>
                   <div className="grid grid-cols-3 gap-3">
                     {[
-                      { name: "Roma Tomatoes", price: "2.40", unit: "kg", color: "bg-red-100" },
-                      { name: "Extra Virgin Olive Oil", price: "12.50", unit: "L", color: "bg-amber-100" },
-                      { name: "Fresh Mozzarella", price: "8.90", unit: "kg", color: "bg-blue-50" },
+                      { name: "Paradajz", price: "280", unit: "kg", color: "bg-red-100" },
+                      { name: "Maslinovo ulje", price: "1.450", unit: "l", color: "bg-amber-100" },
+                      { name: "Mocarela", price: "1.040", unit: "kg", color: "bg-blue-50" },
                     ].map((p) => (
                       <div key={p.name} className="rounded-lg border p-3 space-y-2 hover:border-primary/30 transition-colors">
                         <div className={`h-14 ${p.color} rounded flex items-center justify-center`}>
@@ -437,7 +406,7 @@ export default function HomePage() {
                         </div>
                         <p className="text-[11px] font-medium truncate">{p.name}</p>
                         <div className="flex items-baseline gap-1">
-                          <span className="text-xs font-bold">EUR {p.price}</span>
+                          <span className="text-xs font-bold">{p.price} RSD</span>
                           <span className="text-[9px] text-muted-foreground">/{p.unit}</span>
                         </div>
                       </div>
@@ -446,16 +415,15 @@ export default function HomePage() {
                   <div className="rounded-lg bg-primary/5 border border-primary/20 px-4 py-2.5 flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <ShoppingCart className="h-3.5 w-3.5 text-primary" />
-                      <span className="text-xs font-medium">3 items in cart</span>
+                      <span className="text-xs font-medium">3 stavke u korpi</span>
                     </div>
-                    <span className="text-xs font-bold text-primary">EUR 23.80</span>
+                    <span className="text-xs font-bold text-primary">2.770 RSD</span>
                   </div>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Suppliers */}
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             <div className="order-2 lg:order-1 rounded-2xl bg-gradient-to-br from-primary/5 via-primary/10 to-primary/5 p-6 border">
               <div className="rounded-xl bg-card premium-shadow-lg overflow-hidden border">
@@ -463,14 +431,14 @@ export default function HomePage() {
                   <div className="h-2.5 w-2.5 rounded-full bg-red-400" />
                   <div className="h-2.5 w-2.5 rounded-full bg-yellow-400" />
                   <div className="h-2.5 w-2.5 rounded-full bg-green-400" />
-                  <span className="text-[10px] text-muted-foreground ml-2">Supplier Dashboard</span>
+                  <span className="text-[10px] text-muted-foreground ml-2">Kontrolna tabla dobavljača</span>
                 </div>
                 <div className="p-5 space-y-4">
                   <div className="grid grid-cols-3 gap-3">
                     {[
-                      { label: "Orders", value: "128", icon: Package, trend: "+12%" },
-                      { label: "Revenue", value: "EUR 24.5k", icon: CreditCard, trend: "+8%" },
-                      { label: "Customers", value: "47", icon: Users, trend: "+5" },
+                      { label: "Porudžbine", value: "128", icon: Package, trend: "+12%" },
+                      { label: "Prihod", value: "1,4M RSD", icon: CreditCard, trend: "+8%" },
+                      { label: "Klijenti", value: "47", icon: Users, trend: "+5" },
                     ].map((stat) => {
                       const SIcon = stat.icon;
                       return (
@@ -486,11 +454,11 @@ export default function HomePage() {
                     })}
                   </div>
                   <div className="space-y-1.5">
-                    <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">Recent Orders</p>
+                    <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">Nedavne porudžbine</p>
                     {[
-                      { restaurant: "La Bella Italia", items: 5, total: "EUR 186.40", status: "Confirmed" },
-                      { restaurant: "Sakura Sushi Bar", items: 3, total: "EUR 94.20", status: "Pending" },
-                      { restaurant: "Bistro Lumiere", items: 8, total: "EUR 312.00", status: "Dispatched" },
+                      { restaurant: "La Bella Italia", items: 5, total: "21.040 RSD", status: "Confirmed" },
+                      { restaurant: "Sakura Sushi Bar", items: 3, total: "10.640 RSD", status: "Pending" },
+                      { restaurant: "Bistro Lumiere", items: 8, total: "35.240 RSD", status: "Dispatched" },
                     ].map((order) => (
                       <div key={order.restaurant} className="flex items-center justify-between rounded-lg border px-3 py-2">
                         <div className="flex items-center gap-2.5 min-w-0">
@@ -498,7 +466,7 @@ export default function HomePage() {
                           <span className="text-[11px] font-medium truncate">{order.restaurant}</span>
                         </div>
                         <div className="flex items-center gap-3 shrink-0">
-                          <span className="text-[10px] text-muted-foreground">{order.items} items</span>
+                          <span className="text-[10px] text-muted-foreground">{order.items} stavki</span>
                           <span className="text-[11px] font-bold">{order.total}</span>
                         </div>
                       </div>
@@ -507,7 +475,7 @@ export default function HomePage() {
                   <div className="rounded-lg bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 px-4 py-2.5 flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <TrendingUp className="h-3.5 w-3.5 text-emerald-600" />
-                      <span className="text-xs font-medium text-emerald-700 dark:text-emerald-400">Monthly growth</span>
+                      <span className="text-xs font-medium text-emerald-700 dark:text-emerald-400">Mesečni rast</span>
                     </div>
                     <span className="text-xs font-bold text-emerald-700 dark:text-emerald-400">+23%</span>
                   </div>
@@ -516,21 +484,21 @@ export default function HomePage() {
             </div>
             <div className="order-1 lg:order-2 space-y-6">
               <div className="inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold text-primary bg-primary/5">
-                FOR SUPPLIERS
+                ZA DOBAVLJAČE
               </div>
               <h2 className="text-3xl md:text-4xl font-bold tracking-tight leading-tight">
-                A storefront that{" "}
-                <span className="gradient-text">does the back-office for you</span>
+                Izlog koji{" "}
+                <span className="gradient-text">vodi administraciju umesto vas</span>
               </h2>
               <p className="text-muted-foreground text-lg leading-relaxed">
-                List your products. Set delivery slots by zone and weekday. Restaurants find you, place orders, and you work them through pending to delivered in one view. Recurring customers re-order on a schedule you never have to chase.
+                Postavite proizvode. Odredite termine isporuke po zoni i danu. Restorani vas pronalaze, poručuju, a vi ih vodite od čekanja do isporuke u jednom prikazu. Stalni kupci ponavljaju porudžbine po rasporedu koji nikada ne morate da jurite.
               </p>
               <ul className="space-y-3">
                 {[
-                  "Unlimited product listings with categories",
-                  "Time-limited offers and promotions",
-                  "Delivery slots by zone, day, and capacity",
-                  "Payment status tracking with full audit trail",
+                  "Neograničen broj proizvoda sa kategorijama",
+                  "Vremenski ograničene akcije i promocije",
+                  "Termini isporuke po zoni, danu i kapacitetu",
+                  "Praćenje statusa plaćanja sa potpunom evidencijom",
                 ].map((item) => (
                   <li key={item} className="flex items-center gap-3 text-sm">
                     <div className="h-5 w-5 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
@@ -540,11 +508,8 @@ export default function HomePage() {
                   </li>
                 ))}
               </ul>
-              <Link
-                href="/register"
-                className="inline-flex items-center gap-2 text-sm font-semibold text-primary hover:underline"
-              >
-                Join the beta as a supplier <ChevronRight className="h-4 w-4" />
+              <Link href="/register" className="inline-flex items-center gap-2 text-sm font-semibold text-primary hover:underline">
+                Pridruži se beti kao dobavljač <ChevronRight className="h-4 w-4" />
               </Link>
             </div>
           </div>
@@ -553,20 +518,10 @@ export default function HomePage() {
 
       {/* ===== INSIDE THE BETA ===== */}
       <section id="beta" className="relative py-24 md:py-32 overflow-hidden bg-muted/20">
-        {/* decorative background */}
         <div className="absolute inset-0 pointer-events-none">
           <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,var(--color-brand-50)_0%,transparent_55%)] opacity-70" />
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-[480px] w-[480px] rounded-full bg-primary/5 blur-3xl" />
-          <div
-            className="absolute inset-0 opacity-[0.035]"
-            style={{
-              backgroundImage:
-                "linear-gradient(var(--color-foreground) 1px, transparent 1px), linear-gradient(90deg, var(--color-foreground) 1px, transparent 1px)",
-              backgroundSize: "48px 48px",
-            }}
-          />
         </div>
-
         <div className="max-w-7xl mx-auto px-6 relative">
           <Reveal>
             <div className="text-center mb-6 max-w-2xl mx-auto">
@@ -575,38 +530,31 @@ export default function HomePage() {
                   <span className="absolute inline-flex h-full w-full rounded-full bg-primary opacity-75 animate-ping" />
                   <span className="relative inline-flex rounded-full h-2 w-2 bg-primary" />
                 </span>
-                INSIDE THE BETA
+                UNUTAR BETE
               </div>
               <h2 className="text-3xl md:text-5xl font-bold tracking-tight leading-[1.1]">
-                What you get for being{" "}
-                <span className="gradient-text">early</span>
+                Šta dobijate jer ste{" "}
+                <span className="gradient-text">rani</span>
               </h2>
               <p className="text-muted-foreground mt-5 text-lg leading-relaxed">
-                We are not pretending to be bigger than we are. Here is the honest deal for pilot members.
+                Ne pretvaramo se da smo veći nego što jesmo. Evo iskrene ponude za članove pilota.
               </p>
             </div>
           </Reveal>
-
-          {/* Cohort stat strip */}
           <Reveal delay={0.1}>
             <div className="mx-auto mb-14 max-w-3xl grid grid-cols-3 gap-px rounded-2xl border bg-border overflow-hidden">
               {[
-                { value: "12", label: "Pilot seats" },
-                { value: "<24h", label: "Founder reply" },
-                { value: "50%", label: "Off for life" },
+                { value: "12", label: "Pilot mesta" },
+                { value: "<24h", label: "Odgovor osnivača" },
+                { value: "50%", label: "Popust zauvek" },
               ].map((stat) => (
                 <div key={stat.label} className="bg-card px-4 py-5 text-center">
-                  <div className="text-2xl md:text-3xl font-bold tracking-tight gradient-text">
-                    {stat.value}
-                  </div>
-                  <div className="text-[11px] mt-1 uppercase tracking-wider text-muted-foreground font-medium">
-                    {stat.label}
-                  </div>
+                  <div className="text-2xl md:text-3xl font-bold tracking-tight gradient-text">{stat.value}</div>
+                  <div className="text-[11px] mt-1 uppercase tracking-wider text-muted-foreground font-medium">{stat.label}</div>
                 </div>
               ))}
             </div>
           </Reveal>
-
           <Stagger className="grid gap-6 md:grid-cols-3">
             {pilotBenefits.map((b, i) => {
               const Icon = b.icon;
@@ -614,20 +562,14 @@ export default function HomePage() {
                 <StaggerItem key={b.title}>
                   <HoverLift className="h-full">
                     <div className="group relative h-full rounded-2xl border bg-card p-7 premium-shadow hover:premium-shadow-lg transition-shadow overflow-hidden">
-                      {/* corner accent */}
                       <div className="absolute -top-12 -right-12 h-32 w-32 rounded-full bg-primary/5 group-hover:bg-primary/10 transition-colors" />
-                      {/* rank number */}
-                      <div className="absolute top-5 right-5 text-5xl font-bold text-primary/10 leading-none select-none">
-                        0{i + 1}
-                      </div>
+                      <div className="absolute top-5 right-5 text-5xl font-bold text-primary/10 leading-none select-none">0{i + 1}</div>
                       <div className="relative space-y-4">
                         <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-primary/15 to-primary/5 border border-primary/10 flex items-center justify-center group-hover:scale-110 group-hover:rotate-3 transition-transform">
                           <Icon className="h-6 w-6 text-primary" />
                         </div>
                         <h3 className="font-semibold text-lg">{b.title}</h3>
-                        <p className="text-muted-foreground text-sm leading-relaxed">
-                          {b.description}
-                        </p>
+                        <p className="text-muted-foreground text-sm leading-relaxed">{b.description}</p>
                       </div>
                     </div>
                   </HoverLift>
@@ -635,45 +577,37 @@ export default function HomePage() {
               );
             })}
           </Stagger>
-
-          {/* Founder note */}
           <Reveal delay={0.15}>
             <div className="mt-16 mx-auto max-w-3xl relative">
-              {/* soft glow behind card */}
               <div className="absolute -inset-1 rounded-3xl bg-gradient-to-br from-primary/20 via-primary/5 to-transparent blur-xl opacity-60" />
               <div className="relative rounded-2xl border bg-card p-8 md:p-10 premium-shadow-lg">
                 <div className="flex items-start gap-5">
                   <div className="relative shrink-0">
-                    <div className="h-14 w-14 rounded-full bg-gradient-to-br from-primary to-primary/70 text-primary-foreground flex items-center justify-center font-bold text-lg">
-                      N
-                    </div>
+                    <div className="h-14 w-14 rounded-full bg-gradient-to-br from-primary to-primary/70 text-primary-foreground flex items-center justify-center font-bold text-lg">N</div>
                     <div className="absolute -bottom-1 -right-1 h-5 w-5 rounded-full bg-card border-2 border-card flex items-center justify-center">
                       <span className="h-3 w-3 rounded-full bg-emerald-500 animate-pulse" />
                     </div>
                   </div>
                   <div className="space-y-3 flex-1">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <p className="text-xs font-semibold text-primary uppercase tracking-wide">A note from the founder</p>
+                      <p className="text-xs font-semibold text-primary uppercase tracking-wide">Poruka osnivača</p>
                       <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 px-2 py-0.5 text-[10px] font-semibold">
                         <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                        Replying today
+                        Odgovaramo danas
                       </span>
                     </div>
                     <p className="text-foreground leading-relaxed">
-                      We are building this with a small cohort because the only way to get procurement right is to sit next to people doing it every day. If you join the beta, expect emails, calls, and the occasional &quot;would this be useful?&quot; before we ship something.
+                      Gradimo ovo sa malom grupom jer je jedini način da se nabavka uradi kako treba taj da sedimo pored ljudi koji to rade svakog dana. Ako se pridružite beti, očekujte imejlove, pozive i povremeno pitanje &quot;da li bi ovo bilo korisno?&quot; pre nego što nešto objavimo.
                     </p>
                     <p className="text-muted-foreground text-sm leading-relaxed">
-                      In return, you get a product shaped around your kitchen - not someone else&apos;s idea of one.
+                      Zauzvrat, dobijate proizvod oblikovan oko vaše kuhinje - a ne po tuđoj ideji.
                     </p>
                     <div className="pt-2 flex flex-col sm:flex-row sm:items-center gap-3">
-                      <a
-                        href="mailto:hello@procure-link.com"
-                        className="inline-flex items-center gap-2 rounded-xl bg-primary px-5 h-10 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-all hover:shadow-lg hover:shadow-primary/25 active:scale-[0.98]"
-                      >
-                        <Mail className="h-4 w-4" /> Email the founder
+                      <a href="mailto:podrska@procure-link.com" className="inline-flex items-center gap-2 rounded-xl bg-primary px-5 h-10 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-all hover:shadow-lg hover:shadow-primary/25 active:scale-[0.98]">
+                        <Mail className="h-4 w-4" /> Pišite osnivaču
                       </a>
                       <span className="text-xs text-muted-foreground">
-                        Or <Link href="/register" className="font-semibold text-primary hover:underline">grab a pilot seat</Link> - takes 5 minutes.
+                        Ili <Link href="/register" className="font-semibold text-primary hover:underline">uzmite pilot mesto</Link> - traje 5 minuta.
                       </span>
                     </div>
                   </div>
@@ -689,21 +623,21 @@ export default function HomePage() {
         <div className="max-w-7xl mx-auto px-6">
           <div className="text-center mb-16 max-w-2xl mx-auto">
             <div className="inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold text-primary bg-primary/5 mb-4">
-              PRICING
+              CENE
             </div>
             <h2 className="text-3xl md:text-4xl font-bold tracking-tight">
-              Free during beta.{" "}
-              <span className="gradient-text">Honest after.</span>
+              Besplatno tokom bete.{" "}
+              <span className="gradient-text">Iskreno posle.</span>
             </h2>
             <p className="text-muted-foreground mt-4 text-lg">
-              Restaurants order for free, forever. Suppliers pay a simple monthly fee once we launch. Pilot members lock 50% off for life.
+              Restorani poručuju besplatno, zauvek. Dobavljači plaćaju jednostavnu mesečnu softversku naknadu. Članovi pilota zaključavaju 50% popusta zauvek.
             </p>
           </div>
 
           <div className="flex justify-center mb-12">
             <span className="inline-flex items-center gap-2 rounded-full border bg-primary/5 px-4 py-1.5 text-xs font-medium text-primary text-center">
               <Sparkles className="h-3.5 w-3.5 shrink-0" />
-              Everything is free during beta. Prices below are indicative and apply after launch.
+              Tokom bete je sve besplatno. Cene ispod su okvirne i važe posle lansiranja.
             </span>
           </div>
 
@@ -714,40 +648,38 @@ export default function HomePage() {
                   <Building2 className="h-6 w-6 text-primary" />
                 </div>
                 <div>
-                  <h3 className="font-bold text-lg">Restaurants</h3>
+                  <h3 className="font-bold text-lg">Restorani</h3>
                   <p className="text-sm text-muted-foreground mt-1">
-                    Order across every supplier, schedule deliveries, automate recurring orders. Always free.
+                    Poručujte od svih dobavljača, zakazujte isporuke, automatizujte ponavljajuće porudžbine. Uvek besplatno.
                   </p>
                 </div>
               </div>
               <div className="text-left sm:text-right shrink-0">
-                <div className="text-3xl font-bold tracking-tight">Free</div>
-                <div className="text-xs text-muted-foreground">forever</div>
+                <div className="text-3xl font-bold tracking-tight">Besplatno</div>
+                <div className="text-xs text-muted-foreground">zauvek</div>
               </div>
             </div>
           </div>
 
-          <div className="flex items-center gap-3 max-w-5xl mx-auto mb-6">
+          <div className="flex items-center gap-3 max-w-3xl mx-auto mb-6">
             <Truck className="h-4 w-4 text-muted-foreground shrink-0" />
-            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">For suppliers</p>
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Za dobavljače</p>
             <div className="h-px flex-1 bg-border" />
           </div>
 
-          <div className="grid gap-6 md:grid-cols-3 max-w-5xl mx-auto items-stretch">
+          <div className="grid gap-6 md:grid-cols-2 max-w-3xl mx-auto items-stretch">
             {supplierTiers.map((tier) => (
               <div
                 key={tier.name}
                 className={`relative flex flex-col rounded-3xl bg-card p-8 ${
-                  tier.highlighted
-                    ? "border-2 border-primary premium-shadow-lg"
-                    : "border"
+                  tier.highlighted ? "border-2 border-primary premium-shadow-lg" : "border"
                 }`}
               >
                 {tier.highlighted && (
                   <div className="absolute -top-3 left-1/2 -translate-x-1/2">
                     <span className="inline-flex items-center gap-1.5 rounded-full bg-primary px-3 py-1 text-[11px] font-semibold text-primary-foreground">
                       <Sparkles className="h-3 w-3" />
-                      Most popular
+                      Najpopularniji
                     </span>
                   </div>
                 )}
@@ -755,9 +687,10 @@ export default function HomePage() {
                   <h3 className="font-bold text-lg">{tier.name}</h3>
                   <p className="text-sm text-muted-foreground mt-1 min-h-[2.5rem]">{tier.tagline}</p>
                   <div className="flex items-baseline gap-1 mt-4">
-                    <span className="text-4xl font-bold tracking-tight whitespace-nowrap">{tier.price}</span>
-                    <span className="text-muted-foreground text-sm">{tier.period}</span>
+                    <span className="text-4xl font-bold tracking-tight whitespace-nowrap">{tier.priceRsd}</span>
+                    <span className="text-muted-foreground text-sm">/mesečno</span>
                   </div>
+                  <p className="text-xs text-muted-foreground mt-1">{tier.priceEur} / mesečno</p>
                 </div>
                 <ul className="space-y-3 mt-8 flex-1">
                   {tier.features.map((feat) => (
@@ -775,7 +708,7 @@ export default function HomePage() {
                       : "border-2 hover:bg-muted"
                   }`}
                 >
-                  {tier.cta}
+                  Pridruži se beti
                   <ArrowRight className="h-4 w-4" />
                 </Link>
               </div>
@@ -783,7 +716,7 @@ export default function HomePage() {
           </div>
 
           <p className="text-xs text-center text-muted-foreground mt-8 max-w-2xl mx-auto">
-            Annual billing saves two months. No transaction fees or commission - you keep what you sell. Pilot suppliers lock the Growth tier at EUR 24.50/month for life.
+            Naplaćujemo isključivo softversku naknadu - bez provizije po transakciji. Zainteresovani dobavljači nam se jave i mi ih ručno aktiviramo tokom bete.
           </p>
         </div>
       </section>
@@ -793,30 +726,23 @@ export default function HomePage() {
         <div className="max-w-7xl mx-auto px-6">
           <Reveal className="relative rounded-3xl bg-primary overflow-hidden p-12 md:p-20 text-center">
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_50%,rgba(255,255,255,0.12)_0%,transparent_60%)]" />
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_80%,rgba(255,255,255,0.08)_0%,transparent_40%)]" />
             <div className="relative space-y-6 max-w-2xl mx-auto">
               <div className="inline-flex items-center gap-2 rounded-full bg-white/15 backdrop-blur-sm px-4 py-1.5 text-sm font-medium text-white">
                 <Zap className="h-3.5 w-3.5" />
-                Limited beta spots
+                Ograničen broj beta mesta
               </div>
               <h2 className="text-3xl md:text-5xl font-bold text-primary-foreground tracking-tight">
-                Ready to run procurement like a workflow?
+                Spremni da vodite nabavku kao tok rada?
               </h2>
               <p className="text-primary-foreground/80 text-lg max-w-xl mx-auto">
-                Five minutes to set up. Free for as long as the beta runs. Real product, real founder, real conversation.
+                Pet minuta za podešavanje. Besplatno dok traje beta. Pravi proizvod, pravi osnivač, pravi razgovor.
               </p>
               <div className="flex flex-col sm:flex-row gap-3 justify-center pt-2">
-                <Link
-                  href="/register"
-                  className="inline-flex h-12 items-center justify-center rounded-xl bg-white px-8 text-sm font-semibold text-primary hover:bg-white/90 transition-all active:scale-[0.98] gap-2"
-                >
-                  Join the beta <ArrowRight className="h-4 w-4" />
+                <Link href="/register" className="inline-flex h-12 items-center justify-center rounded-xl bg-white px-8 text-sm font-semibold text-primary hover:bg-white/90 transition-all active:scale-[0.98] gap-2">
+                  Pridruži se beti <ArrowRight className="h-4 w-4" />
                 </Link>
-                <a
-                  href="mailto:hello@procure-link.com"
-                  className="inline-flex h-12 items-center justify-center rounded-xl border-2 border-white/30 px-8 text-sm font-semibold text-primary-foreground hover:bg-white/10 transition-all active:scale-[0.98] gap-2"
-                >
-                  <Mail className="h-4 w-4" /> Talk to the founder
+                <a href="mailto:podrska@procure-link.com" className="inline-flex h-12 items-center justify-center rounded-xl border-2 border-white/30 px-8 text-sm font-semibold text-primary-foreground hover:bg-white/10 transition-all active:scale-[0.98] gap-2">
+                  <Mail className="h-4 w-4" /> Razgovaraj sa osnivačem
                 </a>
               </div>
             </div>
@@ -831,37 +757,37 @@ export default function HomePage() {
             <div className="space-y-4">
               <Logo />
               <p className="text-sm text-muted-foreground leading-relaxed">
-                Restaurant procurement without the phone calls. Currently in private beta.
+                Nabavka za restorane bez telefonskih poziva. Trenutno u privatnoj beti.
               </p>
             </div>
             <div>
-              <h4 className="font-semibold text-sm mb-4">Product</h4>
+              <h4 className="font-semibold text-sm mb-4">Proizvod</h4>
               <ul className="space-y-2.5 text-sm text-muted-foreground">
-                <li><a href="#features" className="hover:text-foreground transition-colors">Features</a></li>
-                <li><a href="#how-it-works" className="hover:text-foreground transition-colors">How it works</a></li>
-                <li><a href="#beta" className="hover:text-foreground transition-colors">Inside the beta</a></li>
-                <li><a href="#pricing" className="hover:text-foreground transition-colors">Pricing</a></li>
+                <li><a href="#features" className="hover:text-foreground transition-colors">Mogućnosti</a></li>
+                <li><a href="#how-it-works" className="hover:text-foreground transition-colors">Kako funkcioniše</a></li>
+                <li><a href="#beta" className="hover:text-foreground transition-colors">Unutar bete</a></li>
+                <li><a href="#pricing" className="hover:text-foreground transition-colors">Cene</a></li>
               </ul>
             </div>
             <div>
-              <h4 className="font-semibold text-sm mb-4">Company</h4>
+              <h4 className="font-semibold text-sm mb-4">Kompanija</h4>
               <ul className="space-y-2.5 text-sm text-muted-foreground">
-                <li><a href="mailto:hello@procure-link.com" className="hover:text-foreground transition-colors">Contact</a></li>
-                <li><Link href="/register" className="hover:text-foreground transition-colors">Join the beta</Link></li>
-                <li><Link href="/login" className="hover:text-foreground transition-colors">Sign in</Link></li>
+                <li><a href="mailto:podrska@procure-link.com" className="hover:text-foreground transition-colors">Kontakt</a></li>
+                <li><Link href="/register" className="hover:text-foreground transition-colors">Pridruži se beti</Link></li>
+                <li><Link href="/login" className="hover:text-foreground transition-colors">Prijava</Link></li>
               </ul>
             </div>
             <div>
-              <h4 className="font-semibold text-sm mb-4">Legal</h4>
+              <h4 className="font-semibold text-sm mb-4">Pravno</h4>
               <ul className="space-y-2.5 text-sm text-muted-foreground">
-                <li><Link href="/privacy" className="hover:text-foreground transition-colors">Privacy Policy</Link></li>
-                <li><Link href="/terms" className="hover:text-foreground transition-colors">Terms of Service</Link></li>
+                <li><Link href="/privacy" className="hover:text-foreground transition-colors">Politika privatnosti</Link></li>
+                <li><Link href="/terms" className="hover:text-foreground transition-colors">Uslovi korišćenja</Link></li>
               </ul>
             </div>
           </div>
           <div className="border-t mt-12 pt-8 flex flex-col sm:flex-row items-center justify-between gap-4">
             <p className="text-sm text-muted-foreground">
-              &copy; {new Date().getFullYear()} ProcureLink. All rights reserved.
+              &copy; {new Date().getFullYear()} ProcureLink. Sva prava zadržana.
             </p>
             <div className="flex items-center gap-4 text-muted-foreground">
               <Users className="h-4 w-4" />

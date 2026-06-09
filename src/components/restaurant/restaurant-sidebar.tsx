@@ -7,21 +7,25 @@ import {
   ClipboardList,
   CalendarDays,
   Repeat,
+  Settings,
 } from "lucide-react";
 import { SidebarNav } from "@/components/shared/sidebar-nav";
 import { MobileHeader } from "@/components/shared/mobile-header";
 import { useCart } from "@/hooks/use-cart";
+import { useTranslations } from "next-intl";
 
 export function RestaurantSidebar() {
   const { items } = useCart();
+  const t = useTranslations("nav");
 
   const restaurantNavItems = [
-    { title: "Dashboard", href: "/restaurant/dashboard", icon: LayoutDashboard },
-    { title: "Browse", href: "/restaurant/browse", icon: Search },
-    { title: "Cart", href: "/restaurant/cart", icon: ShoppingCart, badge: items.length },
-    { title: "Orders", href: "/restaurant/orders", icon: ClipboardList },
-    { title: "Automations", href: "/restaurant/automations", icon: Repeat },
-    { title: "Calendar", href: "/restaurant/calendar", icon: CalendarDays },
+    { title: t("dashboard"), href: "/restaurant/dashboard", icon: LayoutDashboard },
+    { title: t("browse"), href: "/restaurant/browse", icon: Search },
+    { title: t("cart"), href: "/restaurant/cart", icon: ShoppingCart, badge: items.length },
+    { title: t("orders"), href: "/restaurant/orders", icon: ClipboardList },
+    { title: t("automations"), href: "/restaurant/automations", icon: Repeat },
+    { title: t("calendar"), href: "/restaurant/calendar", icon: CalendarDays },
+    { title: t("settings"), href: "/restaurant/settings", icon: Settings },
   ];
 
   return (

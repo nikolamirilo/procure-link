@@ -23,6 +23,10 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    // Mount-detection + read persisted theme from the browser. localStorage is
+    // unavailable during SSR, so this must run in an effect; the setState calls
+    // are intentional one-shot hydration, not a cascading-render loop.
+    /* eslint-disable react-hooks/set-state-in-effect */
     setMounted(true);
     const stored = localStorage.getItem("theme") as Theme | null;
     if (stored) {
@@ -32,6 +36,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
       setTheme("dark");
       document.documentElement.classList.add("dark");
     }
+    /* eslint-enable react-hooks/set-state-in-effect */
   }, []);
 
   const toggleTheme = useCallback(() => {

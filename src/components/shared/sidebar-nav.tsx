@@ -5,9 +5,12 @@ import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { signOut } from "@/lib/actions/auth";
-import { LogOut, Bell, Sun, Moon } from "lucide-react";
+import { LogOut, Sun, Moon } from "lucide-react";
 import { useTheme } from "@/hooks/use-theme";
 import { Logo } from "@/components/shared/logo";
+import { LanguageSwitcher } from "@/components/shared/language-switcher";
+import { NotificationBell } from "@/components/shared/notification-bell";
+import { useTranslations } from "next-intl";
 import type { LucideIcon } from "lucide-react";
 
 interface NavItem {
@@ -25,6 +28,7 @@ interface SidebarNavProps {
 export function SidebarNav({ items, title }: SidebarNavProps) {
   const pathname = usePathname();
   const { theme, toggleTheme } = useTheme();
+  const t = useTranslations();
 
   return (
     <aside className="hidden md:flex h-screen w-[260px] flex-col bg-sidebar text-sidebar-foreground border-r border-sidebar-border shrink-0">
@@ -36,7 +40,7 @@ export function SidebarNav({ items, title }: SidebarNavProps) {
       {/* Nav */}
       <nav className="flex-1 py-4 px-3 space-y-1 overflow-y-auto">
         <p className="px-3 mb-2 text-[11px] font-semibold uppercase tracking-wider text-sidebar-foreground/40">
-          Menu
+          {t("nav.menu")}
         </p>
         {items.map((item) => {
           const Icon = item.icon;
@@ -73,6 +77,9 @@ export function SidebarNav({ items, title }: SidebarNavProps) {
 
       {/* Bottom */}
       <div className="border-t border-sidebar-border p-3 space-y-1">
+        <div className="px-1 pb-1">
+          <LanguageSwitcher className="w-full justify-start bg-transparent border-sidebar-border text-sidebar-foreground/70 hover:bg-sidebar-accent" />
+        </div>
         <button
           onClick={toggleTheme}
           className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-[13px] font-medium text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent transition-colors cursor-pointer"
@@ -82,15 +89,9 @@ export function SidebarNav({ items, title }: SidebarNavProps) {
           ) : (
             <Moon className="h-[18px] w-[18px]" />
           )}
-          {theme === "dark" ? "Light Mode" : "Dark Mode"}
+          {theme === "dark" ? t("theme.light") : t("theme.dark")}
         </button>
-        <Link
-          href="#"
-          className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-[13px] font-medium text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent transition-colors"
-        >
-          <Bell className="h-[18px] w-[18px]" />
-          Notifications
-        </Link>
+        <NotificationBell />
         <form action={signOut}>
           <Button
             type="submit"
@@ -99,7 +100,7 @@ export function SidebarNav({ items, title }: SidebarNavProps) {
             size="sm"
           >
             <LogOut className="h-[18px] w-[18px]" />
-            Sign Out
+            {t("nav.signOut")}
           </Button>
         </form>
       </div>

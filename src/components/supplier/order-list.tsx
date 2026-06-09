@@ -1,9 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import Link from "next/link";
+import { useTransition, type ReactElement } from "react";
+import { useTranslations, useLocale } from "next-intl";
+import { toast } from "sonner";
 import { updateOrderStatus, updatePaymentStatus } from "@/lib/actions/orders";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { ConfirmDialog } from "@/components/shared/confirm-dialog";
 import {
   Table,
   TableBody,
@@ -12,23 +16,11 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { ORDER_STATUSES, PAYMENT_STATUSES } from "@/lib/constants";
-import {
-  Ban,
-  CreditCard,
-  Loader2,
-  CheckCircle2,
-  Truck,
-  Package,
-} from "lucide-react";
-import type { OrderStatus, PaymentStatus } from "@/lib/supabase/types";
+import { formatMoney, formatDay } from "@/lib/format";
+import type { Locale } from "@/i18n/config";
+import { Ban, CreditCard, CheckCircle2, Truck, Package } from "lucide-react";
+import type { OrderStatus } from "@/lib/supabase/types";
 
 interface OrderItem {
   id: string;
@@ -56,51 +48,49 @@ interface Order {
 }
 
 export function SupplierOrderList({ orders }: { orders: Order[] }) {
-  const [loadingAction, setLoadingAction] = useState<string | null>(null);
+  const t = useTranslations("orders");
+  const tStatus = useTranslations("orderStatus");
+  const tPay = useTranslations("paymentStatus");
+  const tc = useTranslations("confirm");
+  const locale = useLocale() as Locale;
+  const [, startTransition] = useTransition();
 
   if (orders.length === 0) {
     return (
       <div className="text-center py-12 text-muted-foreground">
-        No orders yet. Orders from restaurants will appear here.
+        {t("emptySupplier")}
       </div>
     );
   }
 
-  async function handleStatusChange(orderId: string, status: string) {
-    setLoadingAction(`status-${orderId}`);
-    await updateOrderStatus(orderId, status as OrderStatus);
-    setLoadingAction(null);
+  function run(action: () => Promise<{ error?: string } | void>, ok: string) {
+    startTransition(async () => {
+      const r = await action();
+      if (r && "error" in r && r.error) toast.error(r.error);
+      else toast.success(ok);
+    });
   }
 
-  async function handleCancel(orderId: string) {
-    if (!confirm("Are you sure you want to cancel this order?")) return;
-    setLoadingAction(`cancel-${orderId}`);
-    await updateOrderStatus(orderId, "cancelled", "Cancelled by supplier");
-    setLoadingAction(null);
-  }
-
-  async function handleMarkPaid(orderId: string) {
-    setLoadingAction(`pay-${orderId}`);
-    await updatePaymentStatus(orderId, "paid");
-    setLoadingAction(null);
-  }
-
-  async function handleConfirm(orderId: string) {
-    setLoadingAction(`confirm-${orderId}`);
-    await updateOrderStatus(orderId, "confirmed");
-    setLoadingAction(null);
-  }
-
-  async function handleDispatch(orderId: string) {
-    setLoadingAction(`dispatch-${orderId}`);
-    await updateOrderStatus(orderId, "dispatched");
-    setLoadingAction(null);
-  }
-
-  async function handleDeliver(orderId: string) {
-    setLoadingAction(`deliver-${orderId}`);
-    await updateOrderStatus(orderId, "delivered");
-    setLoadingAction(null);
+  function progressButton(
+    icon: ReactElement,
+    label: string,
+    orderId: string,
+    next: OrderStatus
+  ) {
+    return (
+      <ConfirmDialog
+        trigger={
+          <Button variant="outline" size="sm" className="h-7 text-xs gap-1 px-2">
+            {icon}
+            {label}
+          </Button>
+        }
+        title={tc("statusChangeTitle")}
+        description={tc("statusChangeBody")}
+        confirmLabel={label}
+        onConfirm={() => run(() => updateOrderStatus(orderId, next), label)}
+      />
+    );
   }
 
   return (
@@ -108,36 +98,31 @@ export function SupplierOrderList({ orders }: { orders: Order[] }) {
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>Order #</TableHead>
-            <TableHead>Restaurant</TableHead>
-            <TableHead className="hidden md:table-cell">Items</TableHead>
-            <TableHead>Delivery</TableHead>
-            <TableHead className="text-right">Total</TableHead>
-            <TableHead>Status</TableHead>
-            <TableHead>Payment</TableHead>
-            <TableHead className="text-right">Actions</TableHead>
+            <TableHead>{t("orderNumber")}</TableHead>
+            <TableHead>{t("restaurant")}</TableHead>
+            <TableHead className="hidden md:table-cell">{t("items")}</TableHead>
+            <TableHead>{t("delivery")}</TableHead>
+            <TableHead className="text-right">{t("total")}</TableHead>
+            <TableHead>{t("status")}</TableHead>
+            <TableHead>{t("payment")}</TableHead>
+            <TableHead className="text-right">{t("actions")}</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {orders.map((order) => {
-            const status = (order.status ??
-              "pending") as keyof typeof ORDER_STATUSES;
-            const payment = (order.payment_status ??
-              "unpaid") as keyof typeof PAYMENT_STATUSES;
-            const statusInfo = ORDER_STATUSES[status];
-            const paymentInfo = PAYMENT_STATUSES[payment];
-
+            const status = (order.status ?? "pending") as keyof typeof ORDER_STATUSES;
+            const payment = (order.payment_status ?? "unpaid") as keyof typeof PAYMENT_STATUSES;
             const isFinal = status === "cancelled" || status === "delivered";
             const canPay = payment !== "paid" && status !== "cancelled";
 
             return (
               <TableRow key={order.id}>
                 <TableCell className="font-mono text-xs">
-                  {order.order_number}
+                  <Link href={`/supplier/orders/${order.id}`} className="hover:underline">
+                    {order.order_number}
+                  </Link>
                 </TableCell>
-                <TableCell className="text-sm">
-                  {order.restaurant?.name ?? "-"}
-                </TableCell>
+                <TableCell className="text-sm">{order.restaurant?.name ?? "-"}</TableCell>
                 <TableCell className="hidden md:table-cell">
                   <div className="text-xs text-muted-foreground max-w-[200px]">
                     {order.order_items.slice(0, 2).map((item) => (
@@ -147,118 +132,70 @@ export function SupplierOrderList({ orders }: { orders: Order[] }) {
                     ))}
                     {order.order_items.length > 2 && (
                       <span className="text-muted-foreground/60">
-                        +{order.order_items.length - 2} more
+                        {t("more", { count: order.order_items.length - 2 })}
                       </span>
                     )}
                   </div>
                 </TableCell>
                 <TableCell className="text-sm">
-                  {new Date(order.delivery_date).toLocaleDateString()}
+                  {formatDay(order.delivery_date, "d. MMM yyyy.", locale)}
                 </TableCell>
                 <TableCell className="text-right text-sm font-medium tabular-nums">
-                  {order.currency} {order.total.toFixed(2)}
+                  {formatMoney(order.total, order.currency, locale)}
                 </TableCell>
                 <TableCell>
-                  <Badge className={statusInfo.color + " text-xs"}>
-                    {statusInfo.label}
+                  <Badge className={ORDER_STATUSES[status].color + " text-xs"}>
+                    {tStatus(status)}
                   </Badge>
                 </TableCell>
                 <TableCell>
-                  <Badge className={paymentInfo.color + " text-xs"}>
-                    {paymentInfo.label}
+                  <Badge className={PAYMENT_STATUSES[payment].color + " text-xs"}>
+                    {tPay(payment)}
                   </Badge>
                 </TableCell>
                 <TableCell className="text-right">
                   <div className="flex items-center justify-end gap-1 flex-wrap">
-                    {/* Status progression buttons */}
-                    {status === "pending" && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="h-7 text-xs gap-1 px-2"
-                        disabled={!!loadingAction}
-                        onClick={() => handleConfirm(order.id)}
-                      >
-                        {loadingAction === `confirm-${order.id}` ? (
-                          <Loader2 className="h-3 w-3 animate-spin" />
-                        ) : (
-                          <CheckCircle2 className="h-3 w-3" />
-                        )}
-                        Confirm
-                      </Button>
-                    )}
-                    {(status === "confirmed" || status === "preparing") && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="h-7 text-xs gap-1 px-2"
-                        disabled={!!loadingAction}
-                        onClick={() => handleDispatch(order.id)}
-                      >
-                        {loadingAction === `dispatch-${order.id}` ? (
-                          <Loader2 className="h-3 w-3 animate-spin" />
-                        ) : (
-                          <Truck className="h-3 w-3" />
-                        )}
-                        Dispatch
-                      </Button>
-                    )}
-                    {status === "dispatched" && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="h-7 text-xs gap-1 px-2"
-                        disabled={!!loadingAction}
-                        onClick={() => handleDeliver(order.id)}
-                      >
-                        {loadingAction === `deliver-${order.id}` ? (
-                          <Loader2 className="h-3 w-3 animate-spin" />
-                        ) : (
-                          <Package className="h-3 w-3" />
-                        )}
-                        Delivered
-                      </Button>
-                    )}
+                    {status === "pending" &&
+                      progressButton(<CheckCircle2 className="h-3 w-3" />, t("confirmOrder"), order.id, "confirmed")}
+                    {(status === "confirmed" || status === "preparing") &&
+                      progressButton(<Truck className="h-3 w-3" />, t("dispatch"), order.id, "dispatched")}
+                    {status === "dispatched" &&
+                      progressButton(<Package className="h-3 w-3" />, t("delivered"), order.id, "delivered")}
 
-                    {/* Pay */}
                     {canPay && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="h-7 text-xs gap-1 px-2"
-                        disabled={!!loadingAction}
-                        onClick={() => handleMarkPaid(order.id)}
-                      >
-                        {loadingAction === `pay-${order.id}` ? (
-                          <Loader2 className="h-3 w-3 animate-spin" />
-                        ) : (
-                          <CreditCard className="h-3 w-3" />
-                        )}
-                        Paid
-                      </Button>
+                      <ConfirmDialog
+                        trigger={
+                          <Button variant="outline" size="sm" className="h-7 text-xs gap-1 px-2">
+                            <CreditCard className="h-3 w-3" />
+                            {t("markPaid")}
+                          </Button>
+                        }
+                        title={tc("markPaidTitle")}
+                        description={tc("markPaidBody")}
+                        confirmLabel={t("markPaid")}
+                        onConfirm={() => run(() => updatePaymentStatus(order.id, "paid"), t("markPaid"))}
+                      />
                     )}
 
-                    {/* Cancel */}
                     {!isFinal && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-7 text-xs gap-1 px-2 text-destructive hover:text-destructive"
-                        disabled={!!loadingAction}
-                        onClick={() => handleCancel(order.id)}
-                      >
-                        {loadingAction === `cancel-${order.id}` ? (
-                          <Loader2 className="h-3 w-3 animate-spin" />
-                        ) : (
-                          <Ban className="h-3 w-3" />
-                        )}
-                        Cancel
-                      </Button>
+                      <ConfirmDialog
+                        trigger={
+                          <Button variant="ghost" size="sm" className="h-7 text-xs gap-1 px-2 text-destructive hover:text-destructive">
+                            <Ban className="h-3 w-3" />
+                            {t("cancel")}
+                          </Button>
+                        }
+                        title={tc("cancelOrderTitle")}
+                        description={tc("cancelOrderBody")}
+                        confirmLabel={t("cancel")}
+                        variant="destructive"
+                        onConfirm={() => run(() => updateOrderStatus(order.id, "cancelled", "Cancelled by supplier"), t("cancel"))}
+                      />
                     )}
 
-                    {isFinal && !canPay && (
-                      <span className="text-xs text-muted-foreground">-</span>
-                    )}
+                    <Link href={`/supplier/orders/${order.id}`} className="text-xs text-muted-foreground hover:text-foreground px-2">
+                      {t("view")}
+                    </Link>
                   </div>
                 </TableCell>
               </TableRow>

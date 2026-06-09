@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useTranslations } from "next-intl";
 import { completeOnboarding } from "@/lib/actions/auth";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -14,6 +15,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Logo } from "@/components/shared/logo";
+import { CuisineSelect } from "@/components/shared/cuisine-select";
 import { cn } from "@/lib/utils";
 import {
   Building2,
@@ -28,22 +30,18 @@ import {
 } from "lucide-react";
 
 const CURRENCIES = [
+  { value: "RSD", label: "RSD (Srpski dinar)" },
   { value: "EUR", label: "EUR (Euro)" },
-  { value: "USD", label: "USD (US Dollar)" },
-  { value: "GBP", label: "GBP (British Pound)" },
-  { value: "RSD", label: "RSD (Serbian Dinar)" },
-  { value: "CHF", label: "CHF (Swiss Franc)" },
-  { value: "CAD", label: "CAD (Canadian Dollar)" },
-  { value: "AUD", label: "AUD (Australian Dollar)" },
 ];
 
 type StepKey = "basics" | "location" | "contact";
 
 export default function OnboardingPage() {
+  const t = useTranslations("onboarding");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [isSupplier, setIsSupplier] = useState(false);
-  const [currency, setCurrency] = useState("EUR");
+  const [currency, setCurrency] = useState("RSD");
   const [step, setStep] = useState<StepKey>("basics");
 
   // form state - persist between step transitions
@@ -72,9 +70,9 @@ export default function OnboardingPage() {
   }, []);
 
   const steps: { key: StepKey; label: string; icon: typeof Building2 }[] = [
-    { key: "basics", label: "Basics", icon: isSupplier ? Building2 : UtensilsCrossed },
-    { key: "location", label: "Location", icon: MapPin },
-    { key: "contact", label: "Contact", icon: Phone },
+    { key: "basics", label: t("stepBasics"), icon: isSupplier ? Building2 : UtensilsCrossed },
+    { key: "location", label: t("stepLocation"), icon: MapPin },
+    { key: "contact", label: t("stepContact"), icon: Phone },
   ];
 
   const currentStepIndex = steps.findIndex((s) => s.key === step);
@@ -115,9 +113,6 @@ export default function OnboardingPage() {
     }
   }
 
-  const subjectNoun = isSupplier ? "business" : "restaurant";
-  const subjectTitle = isSupplier ? "Supply" : "Restaurant";
-
   return (
     <div className="min-h-screen flex">
       {/* Left: gradient panel with progress */}
@@ -133,14 +128,12 @@ export default function OnboardingPage() {
             <div className="space-y-3">
               <div className="inline-flex items-center gap-2 rounded-full bg-white/15 backdrop-blur-sm px-3 py-1 text-xs font-medium text-white">
                 <Sparkles className="h-3 w-3" />
-                Final step
+                {t("finalStep")}
               </div>
               <h2 className="text-3xl font-bold text-white leading-tight">
-                Let&apos;s set up your {subjectNoun}
+                {isSupplier ? t("setupBusiness") : t("setupRestaurant")}
               </h2>
-              <p className="text-white/70 leading-relaxed">
-                Takes about a minute. You can edit any of this later from your settings.
-              </p>
+              <p className="text-white/70 leading-relaxed">{t("setupBlurb")}</p>
             </div>
 
             {/* Vertical stepper */}
@@ -176,7 +169,7 @@ export default function OnboardingPage() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-xs uppercase tracking-wider text-white/60 font-medium">
-                        Step {i + 1}
+                        {t("step")} {i + 1}
                       </p>
                       <p className="text-sm font-semibold text-white">{s.label}</p>
                     </div>
@@ -189,9 +182,7 @@ export default function OnboardingPage() {
             </ol>
           </div>
 
-          <p className="text-xs text-white/50">
-            Your data stays private. We never share business details with third parties.
-          </p>
+          <p className="text-xs text-white/50">{t("dataPrivate")}</p>
         </div>
       </div>
 
@@ -216,20 +207,20 @@ export default function OnboardingPage() {
               ))}
             </div>
             <p className="text-xs text-muted-foreground mt-2 text-center">
-              Step {currentStepIndex + 1} of {steps.length} - {steps[currentStepIndex].label}
+              {t("step")} {currentStepIndex + 1} {t("of")} {steps.length} - {steps[currentStepIndex].label}
             </p>
           </div>
 
           <div className="rounded-2xl border bg-card premium-shadow-lg p-6 sm:p-8">
             <div className="space-y-1 mb-6">
               <h1 className="text-2xl font-bold tracking-tight">
-                Set up your {subjectTitle.toLowerCase()} profile
+                {isSupplier ? t("profileTitleSupplier") : t("profileTitleRestaurant")}
               </h1>
               <p className="text-sm text-muted-foreground">
                 {step === "basics" &&
-                  `Tell us about your ${subjectNoun} - the basics first.`}
-                {step === "location" && "Where are you based?"}
-                {step === "contact" && "How can suppliers reach you?"}
+                  (isSupplier ? t("descBasicsSupplier") : t("descBasicsRestaurant"))}
+                {step === "location" && t("descLocation")}
+                {step === "contact" && t("descContact")}
               </p>
             </div>
 
@@ -239,7 +230,7 @@ export default function OnboardingPage() {
                 <div className="space-y-5 animate-in fade-in slide-in-from-right-2 duration-300">
                   <div className="space-y-2">
                     <Label htmlFor="companyName">
-                      {isSupplier ? "Company" : "Restaurant"} name
+                      {isSupplier ? t("companyLabel") : t("restaurantLabel")}
                     </Label>
                     <Input
                       id="companyName"
@@ -256,7 +247,7 @@ export default function OnboardingPage() {
 
                   {isSupplier ? (
                     <div className="space-y-2">
-                      <Label>Default currency</Label>
+                      <Label>{t("defaultCurrency")}</Label>
                       <Select
                         value={currency}
                         onValueChange={(v) => v && setCurrency(v)}
@@ -272,23 +263,16 @@ export default function OnboardingPage() {
                           ))}
                         </SelectContent>
                       </Select>
-                      <p className="text-xs text-muted-foreground">
-                        All your prices and orders will use this currency. You can change it later.
-                      </p>
+                      <p className="text-xs text-muted-foreground">{t("currencyHelp")}</p>
                     </div>
                   ) : (
                     <div className="space-y-2">
-                      <Label htmlFor="cuisineType">Cuisine type</Label>
-                      <Input
-                        id="cuisineType"
-                        name="cuisineType"
-                        placeholder="Italian, Serbian, Asian..."
-                        value={values.cuisineType}
-                        onChange={(e) => updateField("cuisineType", e.target.value)}
+                      <Label htmlFor="cuisineType">{t("cuisineType")}</Label>
+                      <CuisineSelect
+                        defaultValue={values.cuisineType}
+                        onChange={(v) => updateField("cuisineType", v)}
                       />
-                      <p className="text-xs text-muted-foreground">
-                        Helps us suggest the right suppliers for your menu.
-                      </p>
+                      <p className="text-xs text-muted-foreground">{t("cuisineHelp")}</p>
                     </div>
                   )}
                 </div>
@@ -298,7 +282,7 @@ export default function OnboardingPage() {
               {step === "location" && (
                 <div className="space-y-5 animate-in fade-in slide-in-from-right-2 duration-300">
                   <div className="space-y-2">
-                    <Label htmlFor="address">Street address</Label>
+                    <Label htmlFor="address">{t("streetAddress")}</Label>
                     <Input
                       id="address"
                       name="address"
@@ -310,7 +294,7 @@ export default function OnboardingPage() {
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor="city">City</Label>
+                      <Label htmlFor="city">{t("city")}</Label>
                       <Input
                         id="city"
                         name="city"
@@ -320,7 +304,7 @@ export default function OnboardingPage() {
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="postalCode">Postal code</Label>
+                      <Label htmlFor="postalCode">{t("postalCode")}</Label>
                       <Input
                         id="postalCode"
                         name="postalCode"
@@ -331,7 +315,7 @@ export default function OnboardingPage() {
                     </div>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="country">Country</Label>
+                    <Label htmlFor="country">{t("country")}</Label>
                     <Input
                       id="country"
                       name="country"
@@ -347,7 +331,7 @@ export default function OnboardingPage() {
               {step === "contact" && (
                 <div className="space-y-5 animate-in fade-in slide-in-from-right-2 duration-300">
                   <div className="space-y-2">
-                    <Label htmlFor="phone">Phone number</Label>
+                    <Label htmlFor="phone">{t("phoneNumber")}</Label>
                     <Input
                       id="phone"
                       name="phone"
@@ -359,29 +343,27 @@ export default function OnboardingPage() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="companyEmail">Business email</Label>
+                    <Label htmlFor="companyEmail">{t("companyEmail")}</Label>
                     <Input
                       id="companyEmail"
                       name="companyEmail"
                       type="email"
-                      placeholder="info@company.com"
+                      placeholder="info@kompanija.com"
                       value={values.companyEmail}
                       onChange={(e) => updateField("companyEmail", e.target.value)}
                     />
-                    <p className="text-xs text-muted-foreground">
-                      We&apos;ll send order notifications and receipts here.
-                    </p>
+                    <p className="text-xs text-muted-foreground">{t("emailHelp")}</p>
                   </div>
 
                   {/* Review summary */}
                   <div className="rounded-xl border bg-muted/30 p-4 space-y-2">
                     <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                      Almost done
+                      {t("almostDone")}
                     </p>
                     <p className="text-sm">
-                      <span className="font-semibold">{values.companyName || "—"}</span>
+                      <span className="font-semibold">{values.companyName || "-"}</span>
                       {values.city && (
-                        <span className="text-muted-foreground"> in {values.city}</span>
+                        <span className="text-muted-foreground"> {t("in")} {values.city}</span>
                       )}
                     </p>
                   </div>
@@ -404,7 +386,7 @@ export default function OnboardingPage() {
                   className="gap-2"
                 >
                   <ArrowLeft className="h-4 w-4" />
-                  Back
+                  {t("back")}
                 </Button>
 
                 {currentStepIndex < steps.length - 1 ? (
@@ -415,7 +397,7 @@ export default function OnboardingPage() {
                     disabled={!canAdvance()}
                     className="gap-2 min-w-[140px]"
                   >
-                    Continue
+                    {t("continue")}
                     <ArrowRight className="h-4 w-4" />
                   </Button>
                 ) : (
@@ -428,12 +410,12 @@ export default function OnboardingPage() {
                     {loading ? (
                       <>
                         <Loader2 className="h-4 w-4 animate-spin" />
-                        Setting up...
+                        {t("settingUp")}
                       </>
                     ) : (
                       <>
                         <Check className="h-4 w-4" />
-                        Complete setup
+                        {t("completeSetup")}
                       </>
                     )}
                   </Button>
@@ -442,9 +424,7 @@ export default function OnboardingPage() {
             </form>
           </div>
 
-          <p className="text-xs text-center text-muted-foreground mt-4">
-            You can skip optional fields and add them later from your settings.
-          </p>
+          <p className="text-xs text-center text-muted-foreground mt-4">{t("skipNote")}</p>
         </div>
       </div>
     </div>

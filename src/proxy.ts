@@ -36,8 +36,21 @@ export async function proxy(request: NextRequest) {
   const path = request.nextUrl.pathname;
 
   // Public routes that don't require auth
-  const publicRoutes = ["/login", "/register", "/", "/privacy", "/terms"];
-  const isPublicRoute = publicRoutes.some((route) => path === route);
+  const publicRoutes = [
+    "/login",
+    "/register",
+    "/",
+    "/privacy",
+    "/terms",
+    "/forgot-password",
+    "/reset-password",
+  ];
+  // Prefixes that must stay reachable without a session: API endpoints (e.g.
+  // the health check hit by uptime monitors) and the Supabase auth callback.
+  const publicPrefixes = ["/api/", "/auth/"];
+  const isPublicRoute =
+    publicRoutes.some((route) => path === route) ||
+    publicPrefixes.some((prefix) => path.startsWith(prefix));
 
   // If not logged in and trying to access protected route, redirect to login
   if (!user && !isPublicRoute) {

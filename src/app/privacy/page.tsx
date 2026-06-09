@@ -1,96 +1,157 @@
-import Link from "next/link";
-import { Logo } from "@/components/shared/logo";
-import { ArrowLeft } from "lucide-react";
+import { getLocale } from "next-intl/server";
+import type { Locale } from "@/i18n/config";
+import { LegalShell } from "@/components/legal/legal-shell";
 
 export const metadata = {
-  title: "Privacy Policy - ProcureLink",
-  description: "Draft privacy policy for the ProcureLink private beta.",
+  title: "Politika privatnosti - ProcureLink",
+  description:
+    "Kako ProcureLink prikuplja i obrađuje podatke (GDPR i Zakon o zaštiti podataka o ličnosti).",
 };
 
-export default function PrivacyPage() {
+// NOTE FOR FOUNDER: replace the bracketed placeholders with your registered
+// entity details before public launch (controller identity, PIB, address) and
+// confirm the contact addresses. Have a Serbian lawyer review before charging.
+const CONTROLLER = "[Naziv pravnog lica d.o.o., PIB, adresa u Srbiji]";
+const PRIVACY_EMAIL = "privatnost@procure-link.com";
+
+export default async function PrivacyPage() {
+  const locale = (await getLocale()) as Locale;
+  const sr = locale === "sr";
+
   return (
-    <div className="min-h-screen bg-background">
-      <nav className="sticky top-0 z-50 glass border-b">
-        <div className="max-w-3xl mx-auto px-6 h-16 flex items-center justify-between">
-          <Logo />
-          <Link
-            href="/"
-            className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
-          >
-            <ArrowLeft className="h-3.5 w-3.5" /> Back to home
-          </Link>
-        </div>
-      </nav>
-      <main className="max-w-3xl mx-auto px-6 py-16 md:py-24">
-        <div className="space-y-6">
-          <div className="inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold text-primary bg-primary/5">
-            DRAFT - BETA
-          </div>
-          <h1 className="text-4xl md:text-5xl font-bold tracking-tight">
-            Privacy Policy
-          </h1>
-          <p className="text-muted-foreground">
-            This is a draft notice for the private beta. The full policy will be published before ProcureLink leaves beta.
-          </p>
-        </div>
-
-        <div className="mt-12 space-y-10 text-foreground/90 leading-relaxed">
-          <section className="space-y-3">
-            <h2 className="text-xl font-semibold">Who we are</h2>
+    <LegalShell
+      title={sr ? "Politika privatnosti" : "Privacy Policy"}
+      subtitle={
+        sr
+          ? "Kako prikupljamo i obrađujemo podatke u skladu sa GDPR-om i Zakonom o zaštiti podataka o ličnosti (ZZPL)."
+          : "How we collect and process data under the GDPR and Serbia's Personal Data Protection Act (ZZPL)."
+      }
+      backLabel={sr ? "Nazad na početnu" : "Back to home"}
+      lastUpdated={sr ? "Poslednje ažuriranje: jun 2026." : "Last updated: June 2026"}
+    >
+      {sr ? (
+        <>
+          <section>
+            <h2>Rukovalac podacima</h2>
             <p>
-              ProcureLink is a B2B procurement platform connecting restaurants and suppliers. The platform is operated by the ProcureLink team. For any privacy question, email <a href="mailto:hello@procure-link.com" className="text-primary hover:underline">hello@procure-link.com</a>.
+              Rukovalac je {CONTROLLER}. ProcureLink je B2B platforma koja povezuje
+              restorane i dobavljače. Za sva pitanja o privatnosti pišite na{" "}
+              <a href={`mailto:${PRIVACY_EMAIL}`}>{PRIVACY_EMAIL}</a>.
             </p>
           </section>
-
-          <section className="space-y-3">
-            <h2 className="text-xl font-semibold">What we collect</h2>
+          <section>
+            <h2>Koje podatke prikupljamo</h2>
             <p>
-              When you join the beta we collect business contact data: your full name, work email, the name and address of your restaurant or supply business, business phone, and the products or categories you operate in. We do not collect personal data beyond what is necessary to run a B2B account.
+              Prilikom registracije prikupljamo poslovne kontakt podatke: ime i
+              prezime, poslovni imejl, naziv i adresu firme, telefon, kao i podatke
+              o proizvodima i porudžbinama nastale korišćenjem platforme. Ne
+              prikupljamo podatke o ličnosti više nego što je neophodno za vođenje
+              poslovnog naloga.
             </p>
           </section>
-
-          <section className="space-y-3">
-            <h2 className="text-xl font-semibold">Why we collect it</h2>
+          <section>
+            <h2>Pravni osnov i svrha</h2>
             <p>
-              We process this data on the lawful basis of contract performance: providing the ProcureLink service to you. We do not sell data to third parties and we do not use it for advertising.
+              Podatke obrađujemo radi izvršenja ugovora (pružanje usluge ProcureLink),
+              u skladu sa članom 6. GDPR-a i odgovarajućim odredbama ZZPL-a. Podatke
+              ne prodajemo trećim licima i ne koristimo ih za oglašavanje.
             </p>
           </section>
-
-          <section className="space-y-3">
-            <h2 className="text-xl font-semibold">Who processes it</h2>
+          <section>
+            <h2>Obrađivači</h2>
+            <p>Za rad platforme koristimo sledeće obrađivače:</p>
+            <ul>
+              <li>Supabase (baza i autentikacija, EU region)</li>
+              <li>Vercel (hosting aplikacije)</li>
+              <li>Resend (transakcioni imejl)</li>
+              <li>Sentry (praćenje grešaka)</li>
+              <li>Paddle (naplata - aktivira se kada uvedemo plaćanje)</li>
+            </ul>
             <p>
-              We use the following processors to run the platform:
+              Sa svakim obrađivačem imamo ili zaključujemo ugovor o obradi podataka
+              (DPA) u skladu sa članom 28. GDPR-a.
             </p>
-            <ul className="list-disc pl-6 space-y-1 text-muted-foreground">
-              <li>Supabase (database and authentication, EU region)</li>
+          </section>
+          <section>
+            <h2>Čuvanje podataka</h2>
+            <p>
+              Podatke čuvamo dok je nalog aktivan i do 24 meseca nakon zatvaranja
+              naloga, osim kada nas duži rok obavezuje (npr. poreski propisi).
+            </p>
+          </section>
+          <section>
+            <h2>Vaša prava</h2>
+            <p>
+              Imate pravo na pristup, ispravku, brisanje, ograničenje obrade i
+              prenosivost podataka, kao i pravo na prigovor. Nalog i sve povezane
+              podatke možete obrisati u podešavanjima ili slanjem zahteva na{" "}
+              <a href={`mailto:${PRIVACY_EMAIL}`}>{PRIVACY_EMAIL}</a>. Pritužbu možete
+              uputiti Povereniku za informacije od javnog značaja i zaštitu podataka
+              o ličnosti.
+            </p>
+          </section>
+        </>
+      ) : (
+        <>
+          <section>
+            <h2>Data controller</h2>
+            <p>
+              The controller is {CONTROLLER}. ProcureLink is a B2B platform connecting
+              restaurants and suppliers. For any privacy question, email{" "}
+              <a href={`mailto:${PRIVACY_EMAIL}`}>{PRIVACY_EMAIL}</a>.
+            </p>
+          </section>
+          <section>
+            <h2>What we collect</h2>
+            <p>
+              At registration we collect business contact data: full name, work email,
+              company name and address, phone, and the product/order data generated by
+              using the platform. We collect no more personal data than is necessary to
+              run a business account.
+            </p>
+          </section>
+          <section>
+            <h2>Lawful basis and purpose</h2>
+            <p>
+              We process this data to perform our contract with you (providing the
+              ProcureLink service), under Article 6 GDPR and the corresponding ZZPL
+              provisions. We do not sell data or use it for advertising.
+            </p>
+          </section>
+          <section>
+            <h2>Processors</h2>
+            <p>We use the following processors:</p>
+            <ul>
+              <li>Supabase (database and auth, EU region)</li>
               <li>Vercel (application hosting)</li>
               <li>Resend (transactional email)</li>
               <li>Sentry (error monitoring)</li>
-              <li>UptimeRobot (availability monitoring)</li>
+              <li>Paddle (billing - activated when payments launch)</li>
             </ul>
-            <p className="text-muted-foreground">
-              Each processor handles data under their own DPA which we are in the process of finalising for the full launch.
-            </p>
-          </section>
-
-          <section className="space-y-3">
-            <h2 className="text-xl font-semibold">Your rights</h2>
             <p>
-              You can request a copy of your data, correct it, or have it deleted at any time by emailing <a href="mailto:hello@procure-link.com" className="text-primary hover:underline">hello@procure-link.com</a>. We aim to respond within 7 days during beta.
+              We hold or are finalising an Article 28 GDPR data processing agreement
+              (DPA) with each processor.
             </p>
           </section>
-
-          <section className="space-y-3">
-            <h2 className="text-xl font-semibold">Changes</h2>
+          <section>
+            <h2>Retention</h2>
             <p>
-              The full version of this policy will be published before ProcureLink leaves beta. We will notify all pilot members by email when it does.
-            </p>
-            <p className="text-muted-foreground text-sm">
-              Last updated: 2026-05-28
+              We keep data while the account is active and for up to 24 months after
+              closure, unless a longer period is legally required (e.g. tax law).
             </p>
           </section>
-        </div>
-      </main>
-    </div>
+          <section>
+            <h2>Your rights</h2>
+            <p>
+              You have the right to access, rectify, erase, restrict and port your data,
+              and to object. You can delete your account and all related data in settings
+              or by emailing <a href={`mailto:${PRIVACY_EMAIL}`}>{PRIVACY_EMAIL}</a>. You
+              may also lodge a complaint with the Serbian Commissioner for Information of
+              Public Importance and Personal Data Protection.
+            </p>
+          </section>
+        </>
+      )}
+    </LegalShell>
   );
 }

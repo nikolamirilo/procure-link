@@ -7,6 +7,8 @@ export type Json =
   | Json[]
 
 export type Database = {
+  // Allows to automatically instantiate createClient with right options
+  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
     PostgrestVersion: "14.4"
   }
@@ -53,7 +55,7 @@ export type Database = {
           country: string | null
           created_at: string | null
           cuisine_type: string | null
-          currency: string
+          currency: string | null
           delivery_zones: Json | null
           description: string | null
           email: string | null
@@ -69,6 +71,8 @@ export type Database = {
           slug: string
           type: string
           updated_at: string | null
+          verified_at: string | null
+          verified_by: string | null
         }
         Insert: {
           address?: string | null
@@ -78,7 +82,7 @@ export type Database = {
           country?: string | null
           created_at?: string | null
           cuisine_type?: string | null
-          currency?: string
+          currency?: string | null
           delivery_zones?: Json | null
           description?: string | null
           email?: string | null
@@ -94,6 +98,8 @@ export type Database = {
           slug: string
           type: string
           updated_at?: string | null
+          verified_at?: string | null
+          verified_by?: string | null
         }
         Update: {
           address?: string | null
@@ -103,7 +109,7 @@ export type Database = {
           country?: string | null
           created_at?: string | null
           cuisine_type?: string | null
-          currency?: string
+          currency?: string | null
           delivery_zones?: Json | null
           description?: string | null
           email?: string | null
@@ -119,6 +125,8 @@ export type Database = {
           slug?: string
           type?: string
           updated_at?: string | null
+          verified_at?: string | null
+          verified_by?: string | null
         }
         Relationships: []
       }
@@ -334,6 +342,7 @@ export type Database = {
           delivery_date: string
           delivery_slot_id: string | null
           id: string
+          idempotency_key: string | null
           is_auto_placed: boolean
           notes: string | null
           order_number: string
@@ -361,6 +370,7 @@ export type Database = {
           delivery_date: string
           delivery_slot_id?: string | null
           id?: string
+          idempotency_key?: string | null
           is_auto_placed?: boolean
           notes?: string | null
           order_number: string
@@ -388,6 +398,7 @@ export type Database = {
           delivery_date?: string
           delivery_slot_id?: string | null
           id?: string
+          idempotency_key?: string | null
           is_auto_placed?: boolean
           notes?: string | null
           order_number?: string
@@ -413,6 +424,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "orders_recurring_order_id_fkey"
+            columns: ["recurring_order_id"]
+            isOneToOne: false
+            referencedRelation: "recurring_orders"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "orders_restaurant_id_fkey"
             columns: ["restaurant_id"]
             isOneToOne: false
@@ -422,6 +440,47 @@ export type Database = {
           {
             foreignKeyName: "orders_supplier_id_fkey"
             columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      plan_inquiries: {
+        Row: {
+          company_id: string | null
+          contact_email: string | null
+          contact_name: string | null
+          created_at: string | null
+          id: string
+          message: string | null
+          plan_code: string | null
+          status: string
+        }
+        Insert: {
+          company_id?: string | null
+          contact_email?: string | null
+          contact_name?: string | null
+          created_at?: string | null
+          id?: string
+          message?: string | null
+          plan_code?: string | null
+          status?: string
+        }
+        Update: {
+          company_id?: string | null
+          contact_email?: string | null
+          contact_name?: string | null
+          created_at?: string | null
+          id?: string
+          message?: string | null
+          plan_code?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "plan_inquiries_company_id_fkey"
+            columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
             referencedColumns: ["id"]
@@ -679,6 +738,121 @@ export type Database = {
           },
         ]
       }
+      subscription_plans: {
+        Row: {
+          code: string
+          created_at: string | null
+          id: string
+          interval: string
+          is_public: boolean
+          name: string
+          price_eur: number
+          price_rsd: number
+        }
+        Insert: {
+          code: string
+          created_at?: string | null
+          id?: string
+          interval?: string
+          is_public?: boolean
+          name: string
+          price_eur: number
+          price_rsd: number
+        }
+        Update: {
+          code?: string
+          created_at?: string | null
+          id?: string
+          interval?: string
+          is_public?: boolean
+          name?: string
+          price_eur?: number
+          price_rsd?: number
+        }
+        Relationships: []
+      }
+      supplier_subscriptions: {
+        Row: {
+          company_id: string
+          created_at: string | null
+          current_period_end: string | null
+          id: string
+          plan_code: string | null
+          provider_customer_id: string | null
+          provider_subscription_id: string | null
+          status: string
+          trial_ends_at: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          company_id: string
+          created_at?: string | null
+          current_period_end?: string | null
+          id?: string
+          plan_code?: string | null
+          provider_customer_id?: string | null
+          provider_subscription_id?: string | null
+          status?: string
+          trial_ends_at?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          company_id?: string
+          created_at?: string | null
+          current_period_end?: string | null
+          id?: string
+          plan_code?: string | null
+          provider_customer_id?: string | null
+          provider_subscription_id?: string | null
+          status?: string
+          trial_ends_at?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "supplier_subscriptions_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: true
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      supplier_verifications: {
+        Row: {
+          company_id: string
+          documents_url: string[] | null
+          id: string
+          notes: string | null
+          verified_at: string
+          verified_by: string
+        }
+        Insert: {
+          company_id: string
+          documents_url?: string[] | null
+          id?: string
+          notes?: string | null
+          verified_at?: string
+          verified_by: string
+        }
+        Update: {
+          company_id?: string
+          documents_url?: string[] | null
+          id?: string
+          notes?: string | null
+          verified_at?: string
+          verified_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "supplier_verifications_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -707,6 +881,22 @@ export type Database = {
       execute_recurring_orders: { Args: never; Returns: Json }
       get_my_company_id: { Args: never; Returns: string }
       get_my_role: { Args: never; Returns: string }
+      place_orders_atomic: { Args: { p_payload: Json }; Returns: Json }
+      update_recurring_order_atomic: {
+        Args: {
+          p_delivery_offset_days: number
+          p_end_date: string
+          p_frequency: string
+          p_id: string
+          p_items: Json
+          p_name: string
+          p_notes: string
+          p_schedule_days: Json
+          p_start_date: string
+          p_supplier_id: string
+        }
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never
@@ -718,6 +908,7 @@ export type Database = {
 }
 
 type DatabaseWithoutInternals = Omit<Database, "__InternalSupabase">
+
 type DefaultSchema = DatabaseWithoutInternals[Extract<keyof Database, "public">]
 
 export type Tables<
@@ -748,6 +939,96 @@ export type Tables<
       ? R
       : never
     : never
+
+export type TablesInsert<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof DefaultSchema["Tables"]
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    : never = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+      Insert: infer I
+    }
+    ? I
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+        Insert: infer I
+      }
+      ? I
+      : never
+    : never
+
+export type TablesUpdate<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof DefaultSchema["Tables"]
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    : never = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+      Update: infer U
+    }
+    ? U
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+        Update: infer U
+      }
+      ? U
+      : never
+    : never
+
+export type Enums<
+  DefaultSchemaEnumNameOrOptions extends
+    | keyof DefaultSchema["Enums"]
+    | { schema: keyof DatabaseWithoutInternals },
+  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
+    : never = never,
+> = DefaultSchemaEnumNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
+  : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
+    ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
+    : never
+
+export type CompositeTypes<
+  PublicCompositeTypeNameOrOptions extends
+    | keyof DefaultSchema["CompositeTypes"]
+    | { schema: keyof DatabaseWithoutInternals },
+  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
+    : never = never,
+> = PublicCompositeTypeNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
+  : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
+    ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
+    : never
+
+export const Constants = {
+  public: {
+    Enums: {},
+  },
+} as const
 
 // App-level type aliases
 export type CompanyType = "supplier" | "restaurant";

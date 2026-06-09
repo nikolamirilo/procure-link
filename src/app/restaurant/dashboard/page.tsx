@@ -1,11 +1,14 @@
 export const dynamic = "force-dynamic";
 
 import { createClient } from "@/lib/supabase/server";
+import { getTranslations } from "next-intl/server";
 import { PageHeader } from "@/components/shared/page-header";
 import { ShoppingCart, ClipboardList, Truck, Clock, Search, CalendarDays } from "lucide-react";
 
 export default async function RestaurantDashboard() {
   const supabase = await createClient();
+  const t = await getTranslations("dashboard");
+  const tn = await getTranslations("nav");
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -42,41 +45,17 @@ export default async function RestaurantDashboard() {
     ]);
 
   const stats = [
-    {
-      title: "Total Orders",
-      value: totalOrdersRes.count ?? 0,
-      icon: ClipboardList,
-      color: "text-blue-600",
-      bg: "bg-blue-50",
-    },
-    {
-      title: "Active Orders",
-      value: activeOrdersRes.count ?? 0,
-      icon: ShoppingCart,
-      color: "text-teal-600",
-      bg: "bg-teal-50",
-    },
-    {
-      title: "Delivered",
-      value: deliveredRes.count ?? 0,
-      icon: Truck,
-      color: "text-amber-600",
-      bg: "bg-amber-50",
-    },
-    {
-      title: "Pending",
-      value: pendingRes.count ?? 0,
-      icon: Clock,
-      color: "text-purple-600",
-      bg: "bg-purple-50",
-    },
+    { title: t("totalOrders"), value: totalOrdersRes.count ?? 0, icon: ClipboardList, color: "text-blue-600", bg: "bg-blue-50" },
+    { title: t("activeOrders"), value: activeOrdersRes.count ?? 0, icon: ShoppingCart, color: "text-teal-600", bg: "bg-teal-50" },
+    { title: t("delivered"), value: deliveredRes.count ?? 0, icon: Truck, color: "text-amber-600", bg: "bg-amber-50" },
+    { title: t("pending"), value: pendingRes.count ?? 0, icon: Clock, color: "text-purple-600", bg: "bg-purple-50" },
   ];
 
   return (
     <div className="space-y-8">
       <PageHeader
-        title={`Welcome back, ${profile?.full_name ?? "Restaurant"}`}
-        description="Here's an overview of your orders and deliveries"
+        title={t("welcome", { name: profile?.full_name ?? t("fallbackRestaurant") })}
+        description={t("overviewRestaurant")}
       />
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
@@ -107,13 +86,13 @@ export default async function RestaurantDashboard() {
 
       {/* Quick actions */}
       <div className="rounded-2xl border bg-card p-6 premium-shadow">
-        <h2 className="font-semibold text-lg mb-4">Quick Actions</h2>
+        <h2 className="font-semibold text-lg mb-4">{t("quickActions")}</h2>
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {[
-            { label: "Browse Products", href: "/restaurant/browse", icon: Search },
-            { label: "View Cart", href: "/restaurant/cart", icon: ShoppingCart },
-            { label: "My Orders", href: "/restaurant/orders", icon: ClipboardList },
-            { label: "Delivery Calendar", href: "/restaurant/calendar", icon: CalendarDays },
+            { label: tn("browse"), href: "/restaurant/browse", icon: Search },
+            { label: tn("cart"), href: "/restaurant/cart", icon: ShoppingCart },
+            { label: tn("orders"), href: "/restaurant/orders", icon: ClipboardList },
+            { label: tn("calendar"), href: "/restaurant/calendar", icon: CalendarDays },
           ].map((action) => {
             const Icon = action.icon;
             return (
