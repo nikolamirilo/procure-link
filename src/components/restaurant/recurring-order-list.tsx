@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/shared/confirm-dialog";
 import { formatDay } from "@/lib/format";
+import { AUTOMATION_STATUSES } from "@/lib/constants";
 import type { Locale } from "@/i18n/config";
 import {
   Repeat,
@@ -86,7 +87,13 @@ export function RecurringOrderList({ orders }: { orders: RecurringOrder[] }) {
                   <h3 className="font-semibold text-[15px] truncate">{order.name}</h3>
                   <p className="text-xs text-muted-foreground mt-0.5">{order.supplier_name}</p>
                 </div>
-                <Badge className={order.is_active ? "bg-green-100 text-green-800 text-[10px] shrink-0" : "bg-yellow-100 text-yellow-800 text-[10px] shrink-0"}>
+                <Badge
+                  className={
+                    (order.is_active
+                      ? AUTOMATION_STATUSES.active.color
+                      : AUTOMATION_STATUSES.paused.color) + " text-[10px] shrink-0"
+                  }
+                >
                   {order.is_active ? t("active") : t("paused")}
                 </Badge>
               </div>

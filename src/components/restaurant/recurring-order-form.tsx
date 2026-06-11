@@ -50,6 +50,10 @@ interface RecurringOrderFormProps {
     items: ItemData[];
   };
   initialItems?: (ItemData & { supplierId: string; supplierName: string })[];
+  /** Locks the supplier when arriving from the cart. */
+  initialSupplierIdOverride?: string;
+  /** Pre-selected weekly days derived from the cart's delivery date. */
+  defaultScheduleDays?: number[];
 }
 
 export function RecurringOrderForm({
@@ -58,6 +62,8 @@ export function RecurringOrderForm({
   currency = "RSD",
   existingOrder,
   initialItems,
+  initialSupplierIdOverride,
+  defaultScheduleDays,
 }: RecurringOrderFormProps) {
   const router = useRouter();
   const t = useTranslations("recurringForm");
@@ -69,6 +75,7 @@ export function RecurringOrderForm({
 
   const initialSupplierId =
     existingOrder?.supplier_id ??
+    initialSupplierIdOverride ??
     initialItems?.[0]?.supplierId ??
     suppliers[0]?.id ??
     "";
@@ -89,7 +96,9 @@ export function RecurringOrderForm({
   const [frequency, setFrequency] = useState<"daily" | "weekly" | "monthly">(
     (existingOrder?.frequency as "daily" | "weekly" | "monthly") ?? "weekly",
   );
-  const [scheduleDays, setScheduleDays] = useState<number[]>(existingOrder?.schedule_days ?? []);
+  const [scheduleDays, setScheduleDays] = useState<number[]>(
+    existingOrder?.schedule_days ?? defaultScheduleDays ?? [],
+  );
   const [deliveryOffset, setDeliveryOffset] = useState(existingOrder?.delivery_offset_days ?? 2);
   const [startDate, setStartDate] = useState(existingOrder?.start_date ?? new Date().toISOString().split("T")[0]);
   const [endDate, setEndDate] = useState(existingOrder?.end_date ?? "");

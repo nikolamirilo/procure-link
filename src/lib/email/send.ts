@@ -82,6 +82,24 @@ export function orderClosedToRestaurant(
   return { subject, html };
 }
 
+/** Internal notification - founder reads it, so Serbian only. */
+export function planInquiryToFounder(data: {
+  companyName: string;
+  contactEmail: string;
+  planCode: string;
+  message: string;
+}) {
+  const subject = `Upit za plan "${data.planCode}" - ${data.companyName}`;
+  const html = wrap(subject, [
+    `Kompanija: <strong>${data.companyName}</strong>`,
+    `Kontakt: ${data.contactEmail}`,
+    `Plan: ${data.planCode}`,
+    data.message ? `Poruka: ${data.message}` : "",
+    "Aktiviraj pretplatu u supplier_subscriptions tabeli.",
+  ].filter(Boolean));
+  return { subject, html };
+}
+
 export function recurringRunFailedToRestaurant(
   locale: Locale,
   data: { name: string }

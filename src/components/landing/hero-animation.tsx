@@ -1,6 +1,5 @@
 "use client";
 
-import { LottieAnimation } from "@/components/shared/lottie-animation";
 import { DotLottieReact } from "@lottiefiles/dotlottie-react";
 
 export function HeroAnimation() {

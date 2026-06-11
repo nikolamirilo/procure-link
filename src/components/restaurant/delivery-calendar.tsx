@@ -23,6 +23,7 @@ interface Order {
   order_number: string;
   status: string | null;
   delivery_date: string;
+  delivery_time: string | null;
   total: number;
   currency: string;
   notes: string | null;
@@ -30,9 +31,16 @@ interface Order {
   order_items: OrderItem[];
 }
 
-function extractDeliveryTime(notes: string | null): string | null {
-  if (!notes) return null;
-  const match = notes.match(/Preferred delivery time:\s*(\d{2}:\d{2})/);
+/**
+ * Preferred time now lives in the structured delivery_time column. The notes
+ * regex remains only as a fallback for orders placed before the migration.
+ */
+function extractDeliveryTime(order: Order): string | null {
+  if (order.delivery_time) return order.delivery_time.slice(0, 5);
+  if (!order.notes) return null;
+  const match = order.notes.match(
+    /(?:Preferred delivery time|Željeno vreme isporuke):\s*(\d{2}:\d{2})/
+  );
   return match ? match[1] : null;
 }
 
@@ -250,10 +258,10 @@ export function DeliveryCalendar({ orders }: { orders: Order[] }) {
                             <p className="text-[11px] text-muted-foreground font-mono">
                               {order.order_number}
                             </p>
-                            {extractDeliveryTime(order.notes) && (
+                            {extractDeliveryTime(order) && (
                               <p className="text-[11px] text-primary flex items-center gap-1 mt-0.5">
                                 <Clock className="h-3 w-3" />
-                                {extractDeliveryTime(order.notes)}
+                                {extractDeliveryTime(order)}
                               </p>
                             )}
                           </div>

@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { getTranslations } from "next-intl/server";
 import { requireRole } from "@/lib/actions/_auth";
 import { deliverySlotSchema, offerSchema, firstError } from "@/lib/actions/schemas";
 
@@ -110,6 +111,21 @@ export async function createOffer(formData: FormData) {
     .maybeSingle();
   if (!product) return { error: "Product not found" };
 
+  // One offer per product per period: overlapping promos are confusing for
+  // restaurants and ambiguous at checkout, so reject them at creation.
+  const { data: overlapping } = await supabase
+    .from("offers")
+    .select("id")
+    .eq("product_id", o.productId)
+    .eq("is_active", true)
+    .lte("start_date", o.endDate)
+    .gte("end_date", o.startDate)
+    .limit(1);
+  if (overlapping && overlapping.length > 0) {
+    const tErr = await getTranslations("serverErrors");
+    return { error: tErr("offerOverlap") };
+  }
+
   const { error } = await supabase.from("offers").insert({
     product_id: o.productId,
     discount_pct: o.discountPct,
@@ -117,6 +133,31 @@ export async function createOffer(formData: FormData) {
     end_date: o.endDate,
   });
 
+  if (error) return { error: error.message };
+  revalidatePath("/supplier/offers");
+  return { success: true };
+}
+
+/** Pause/resume an offer without deleting it. */
+export async function toggleOffer(id: string, isActive: boolean) {
+  const ctx = await requireRole("supplier");
+  if (!ctx) return { error: "Not authorized" };
+  const { supabase, companyId } = ctx;
+
+  // Verify ownership through the product before touching the row.
+  const { data: offer } = await supabase
+    .from("offers")
+    .select("id, products!offers_product_id_fkey(supplier_id)")
+    .eq("id", id)
+    .maybeSingle();
+  const ownerId = (offer?.products as unknown as { supplier_id?: string } | null)
+    ?.supplier_id;
+  if (!offer || ownerId !== companyId) return { error: "Offer not found" };
+
+  const { error } = await supabase
+    .from("offers")
+    .update({ is_active: isActive })
+    .eq("id", id);
   if (error) return { error: error.message };
   revalidatePath("/supplier/offers");
   return { success: true };

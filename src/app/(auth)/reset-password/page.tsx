@@ -6,7 +6,7 @@ import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { updatePassword } from "@/lib/actions/auth";
 import { Button, buttonVariants } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/ui/password-input";
 import { Label } from "@/components/ui/label";
 import { Logo } from "@/components/shared/logo";
 import { Loader2, CheckCircle2 } from "lucide-react";
@@ -58,7 +58,7 @@ export default function ResetPasswordPage() {
           <form action={handle} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="password">{t("newPassword")}</Label>
-              <Input id="password" name="password" type="password" className="h-11" minLength={8} required />
+              <PasswordInput id="password" name="password" className="h-11" minLength={8} required />
             </div>
             {error && (
               <div className="rounded-lg bg-destructive/10 border border-destructive/20 px-4 py-3 text-sm text-destructive">

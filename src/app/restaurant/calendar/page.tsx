@@ -27,7 +27,7 @@ export default async function CalendarPage() {
 
   const { data: orders } = await supabase
     .from("orders")
-    .select("id, order_number, status, delivery_date, total, currency, notes, supplier:companies!orders_supplier_id_fkey(name), order_items(id, product_name, quantity, unit, unit_price, total_price)")
+    .select("id, order_number, status, delivery_date, delivery_time, total, currency, notes, supplier:companies!orders_supplier_id_fkey(name), order_items(id, product_name, quantity, unit, unit_price, total_price)")
     .eq("restaurant_id", profile!.company_id!)
     .gte("delivery_date", today)
     .lte("delivery_date", thirtyDaysOut)

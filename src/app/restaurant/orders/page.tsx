@@ -3,6 +3,7 @@ export const dynamic = "force-dynamic";
 import { createClient } from "@/lib/supabase/server";
 import { getTranslations } from "next-intl/server";
 import { PageHeader } from "@/components/shared/page-header";
+import { AutoRefresh } from "@/components/shared/auto-refresh";
 import { RestaurantOrderList } from "@/components/restaurant/order-list";
 
 export default async function RestaurantOrdersPage() {
@@ -28,6 +29,7 @@ export default async function RestaurantOrdersPage() {
 
   return (
     <div className="space-y-6">
+      <AutoRefresh />
       <PageHeader title={t("restaurantOrdersTitle")} description={t("restaurantOrdersDesc")} />
       <RestaurantOrderList orders={orders ?? []} />
     </div>

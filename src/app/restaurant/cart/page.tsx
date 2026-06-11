@@ -3,10 +3,10 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations, useLocale } from "next-intl";
+import { toast } from "sonner";
 import { useCart } from "@/hooks/use-cart";
 import { createClient } from "@/lib/supabase/client";
 import { placeOrder } from "@/lib/actions/orders";
-import { createRecurringOrderDraft } from "@/lib/actions/recurring-orders";
 import { DeliveryDatePicker } from "@/components/restaurant/delivery-date-picker";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,7 +15,22 @@ import { Separator } from "@/components/ui/separator";
 import { ConfirmDialog } from "@/components/shared/confirm-dialog";
 import { formatMoney } from "@/lib/format";
 import type { Locale } from "@/i18n/config";
-import { Minus, Plus, Trash2, ShoppingBag, ArrowRight, Loader2, Repeat } from "lucide-react";
+import {
+  Minus,
+  Plus,
+  Trash2,
+  ShoppingBag,
+  ArrowRight,
+  Loader2,
+  Repeat,
+  Info,
+  TriangleAlert,
+} from "lucide-react";
+
+interface SupplierMeta {
+  minOrderValue: number;
+  leadTimeHours: number;
+}
 
 export default function CartPage() {
   const {
@@ -25,6 +40,7 @@ export default function CartPage() {
     getSupplierIds,
     getSupplierItems,
     clearCart,
+    clearSupplierItems,
   } = useCart();
   const t = useTranslations("cart");
   const locale = useLocale() as Locale;
@@ -34,41 +50,84 @@ export default function CartPage() {
   const [deliveryTimes, setDeliveryTimes] = useState<Record<string, string>>({});
   const [notes, setNotes] = useState<Record<string, string>>({});
   const [deliveryDaysMap, setDeliveryDaysMap] = useState<Record<string, number[]>>({});
+  const [supplierMeta, setSupplierMeta] = useState<Record<string, SupplierMeta>>({});
   const router = useRouter();
 
   const supplierIds = getSupplierIds();
 
-  // Load each supplier's active delivery weekdays so the date picker can block
-  // days they don't deliver on.
+  // Load each supplier's delivery weekdays + ordering constraints (min order
+  // value, lead time) so the cart surfaces them at the moment of decision.
   useEffect(() => {
     const ids = getSupplierIds();
     if (ids.length === 0) return;
     const supabase = createClient();
     (async () => {
-      const { data } = await supabase
-        .from("delivery_slots")
-        .select("supplier_id, day_of_week")
-        .in("supplier_id", ids)
-        .eq("is_active", true);
+      const [slotsRes, companiesRes] = await Promise.all([
+        supabase
+          .from("delivery_slots")
+          .select("supplier_id, day_of_week")
+          .in("supplier_id", ids)
+          .eq("is_active", true),
+        supabase
+          .from("companies")
+          .select("id, min_order_value, lead_time_hours")
+          .in("id", ids),
+      ]);
+
       const map: Record<string, number[]> = {};
-      for (const row of data ?? []) {
+      for (const row of slotsRes.data ?? []) {
         (map[row.supplier_id] ??= []).push(row.day_of_week);
       }
       for (const k of Object.keys(map)) map[k] = [...new Set(map[k])];
       setDeliveryDaysMap(map);
+
+      const meta: Record<string, SupplierMeta> = {};
+      for (const c of companiesRes.data ?? []) {
+        meta[c.id] = {
+          minOrderValue: Number(c.min_order_value ?? 0),
+          leadTimeHours: Number(c.lead_time_hours ?? 0),
+        };
+      }
+      setSupplierMeta(meta);
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [items.length]);
 
-  async function saveAsRecurring(supplierId: string) {
-    setError(null);
-    const supplierItems = getSupplierItems(supplierId);
-    const result = await createRecurringOrderDraft(
-      supplierId,
-      supplierItems.map((i) => ({ productId: i.productId, quantity: i.quantity })),
+  function supplierSubtotal(supplierId: string): number {
+    return getSupplierItems(supplierId).reduce(
+      (sum, i) => sum + i.unitPrice * i.quantity,
+      0
     );
-    if (result?.error) setError(result.error);
-    else if (result?.id) router.push(`/restaurant/automations/${result.id}/edit`);
+  }
+
+  /** Total promo savings for one supplier's items (0 = no offers in group). */
+  function supplierSavings(supplierId: string): number {
+    return getSupplierItems(supplierId).reduce(
+      (sum, i) =>
+        sum + (i.originalUnitPrice ? (i.originalUnitPrice - i.unitPrice) * i.quantity : 0),
+      0
+    );
+  }
+
+  /** Suppliers whose subtotal is still under their published minimum. */
+  const belowMinSuppliers = supplierIds.filter((sid) => {
+    const min = supplierMeta[sid]?.minOrderValue ?? 0;
+    return min > 0 && supplierSubtotal(sid) < min;
+  });
+
+  function saveAsRecurring(supplierId: string) {
+    // Stateless handoff: the automation form receives the items and supplier
+    // via the URL and nothing is written to the database until the user saves.
+    const supplierItems = getSupplierItems(supplierId);
+    const data = encodeURIComponent(
+      JSON.stringify(
+        supplierItems.map((i) => ({ productId: i.productId, quantity: i.quantity }))
+      )
+    );
+    const params = new URLSearchParams();
+    params.set("supplier", supplierId);
+    if (deliveryDates[supplierId]) params.set("date", deliveryDates[supplierId]);
+    router.push(`/restaurant/automations/new?data=${data}&${params.toString()}`);
   }
 
   if (items.length === 0) {
@@ -106,34 +165,43 @@ export default function CartPage() {
 
     setLoading(true);
     const errors: string[] = [];
+    let placedAny = false;
 
-    for (const supplierId of supplierIds) {
+    // Place sequentially, one order per supplier. Each success immediately
+    // removes that supplier's items from the cart, so a retry after a partial
+    // failure can never re-place (and duplicate) the successful orders.
+    for (const supplierId of [...supplierIds]) {
       const supplierItems = getSupplierItems(supplierId);
+      if (supplierItems.length === 0) continue;
+
       const result = await placeOrder({
         supplierId,
         deliverySlotId: null,
         deliveryDate: deliveryDates[supplierId],
+        deliveryTime: deliveryTimes[supplierId] || "",
         idempotencyKey: crypto.randomUUID(),
-        notes: [
-          deliveryTimes[supplierId] ? `${t("preferredTime")}: ${deliveryTimes[supplierId]}` : "",
-          notes[supplierId] || "",
-        ]
-          .filter(Boolean)
-          .join(" - "),
+        notes: notes[supplierId] || "",
         items: supplierItems.map((i) => ({ productId: i.productId, quantity: i.quantity })),
       });
 
       if (result?.error) {
         errors.push(`${supplierItems[0]?.supplierName}: ${result.error}`);
+      } else {
+        placedAny = true;
+        clearSupplierItems(supplierId);
+        if (result && "orderNumber" in result && result.orderNumber) {
+          toast.success(t("orderPlaced", { number: String(result.orderNumber) }));
+        }
       }
     }
 
     setLoading(false);
 
     if (errors.length > 0) {
-      setError(errors.join(". "));
+      setError(
+        (placedAny ? t("partialFailure") + " " : "") + errors.join(". ")
+      );
     } else {
-      clearCart();
       router.push("/restaurant/orders");
     }
   }
@@ -174,24 +242,52 @@ export default function CartPage() {
             const supplierItems = getSupplierItems(supplierId);
             const supplierName = supplierItems[0]?.supplierName ?? "";
             const currency = supplierItems[0]?.currency ?? "RSD";
-            const subtotal = supplierItems.reduce((sum, i) => sum + i.unitPrice * i.quantity, 0);
+            const subtotal = supplierSubtotal(supplierId);
+            const meta = supplierMeta[supplierId];
+            const minOrder = meta?.minOrderValue ?? 0;
+            const leadTime = meta?.leadTimeHours ?? 0;
+            const belowMin = minOrder > 0 && subtotal < minOrder;
 
             return (
               <div key={supplierId} className="rounded-xl border bg-card premium-shadow overflow-hidden">
                 <div className="px-4 py-2.5 border-b bg-muted/30 flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <h3 className="font-semibold text-sm">{supplierName}</h3>
+                    <h3 className="font-semibold text-sm" title={supplierName}>{supplierName}</h3>
                     <span className="text-[11px] text-muted-foreground">({supplierItems.length})</span>
                   </div>
                   <span className="text-sm font-bold tabular-nums">{formatMoney(subtotal, currency, locale)}</span>
                 </div>
 
+                {/* Ordering constraints, surfaced where the decision happens */}
+                {(minOrder > 0 || leadTime > 0) && (
+                  <div className="px-4 py-2 border-b bg-muted/10 flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] text-muted-foreground">
+                    <span className="inline-flex items-center gap-1">
+                      <Info className="h-3 w-3" />
+                      {minOrder > 0 && t("minOrderLabel", { amount: formatMoney(minOrder, currency, locale) })}
+                      {minOrder > 0 && leadTime > 0 && " · "}
+                      {leadTime > 0 && t("leadTimeNote", { hours: leadTime })}
+                    </span>
+                  </div>
+                )}
+
                 <div className="divide-y">
                   {supplierItems.map((item) => (
                     <div key={item.productId} className="flex items-center gap-3 px-4 py-3 text-sm">
                       <div className="flex-1 min-w-0">
-                        <span className="font-medium block truncate">{item.productName}</span>
+                        <span className="font-medium block truncate" title={item.productName}>
+                          {item.productName}
+                          {item.discountPct ? (
+                            <span className="ml-1.5 rounded-full bg-red-600 text-white text-[9px] font-black px-1.5 py-px align-middle">
+                              -{item.discountPct}%
+                            </span>
+                          ) : null}
+                        </span>
                         <span className="text-xs text-muted-foreground">
+                          {item.originalUnitPrice ? (
+                            <span className="line-through mr-1 tabular-nums">
+                              {formatMoney(item.originalUnitPrice, item.currency, locale)}
+                            </span>
+                          ) : null}
                           {formatMoney(item.unitPrice, item.currency, locale)} / {item.unit}
                         </span>
                       </div>
@@ -226,6 +322,25 @@ export default function CartPage() {
                   ))}
                 </div>
 
+                {supplierSavings(supplierId) > 0 && (
+                  <div className="px-4 py-2 border-t bg-red-50 dark:bg-red-950/20 text-xs font-semibold text-red-700 dark:text-red-400 text-right tabular-nums">
+                    {t("youSave", {
+                      amount: formatMoney(supplierSavings(supplierId), currency, locale),
+                    })}
+                  </div>
+                )}
+
+                {belowMin && (
+                  <div className="px-4 py-2.5 border-t bg-amber-50 dark:bg-amber-950/30 flex items-center gap-2 text-xs text-amber-800 dark:text-amber-300">
+                    <TriangleAlert className="h-3.5 w-3.5 shrink-0" />
+                    {t("belowMin", {
+                      missing: formatMoney(minOrder - subtotal, currency, locale),
+                      name: supplierName,
+                      amount: formatMoney(minOrder, currency, locale),
+                    })}
+                  </div>
+                )}
+
                 <div className="px-4 py-3 border-t bg-muted/10 flex flex-wrap items-end gap-3">
                   <div className="flex-1 min-w-[180px]">
                     <Label className="text-[11px] text-muted-foreground">
@@ -236,6 +351,7 @@ export default function CartPage() {
                         value={deliveryDates[supplierId] ?? ""}
                         onChange={(v) => setDeliveryDates((prev) => ({ ...prev, [supplierId]: v }))}
                         availableDays={deliveryDaysMap[supplierId] ?? []}
+                        leadTimeHours={leadTime}
                       />
                     </div>
                   </div>
@@ -282,7 +398,7 @@ export default function CartPage() {
                 const total = si.reduce((s, i) => s + i.unitPrice * i.quantity, 0);
                 return (
                   <div key={sid} className="flex justify-between">
-                    <span className="text-muted-foreground truncate mr-2 text-xs">
+                    <span className="text-muted-foreground truncate mr-2 text-xs" title={name}>
                       {name} <span className="text-muted-foreground/60">({si.length})</span>
                     </span>
                     <span className="font-medium shrink-0 tabular-nums text-xs">
@@ -300,7 +416,31 @@ export default function CartPage() {
               </p>
             )}
 
-            <Button className="w-full h-10 font-semibold" onClick={handlePlaceAllOrders} disabled={loading}>
+            {belowMinSuppliers.length > 0 && (
+              <p className="text-[11px] text-amber-700 dark:text-amber-400 leading-relaxed flex items-start gap-1.5">
+                <TriangleAlert className="h-3.5 w-3.5 shrink-0 mt-0.5" />
+                {t("belowMin", {
+                  missing: formatMoney(
+                    (supplierMeta[belowMinSuppliers[0]]?.minOrderValue ?? 0) -
+                      supplierSubtotal(belowMinSuppliers[0]),
+                    getSupplierItems(belowMinSuppliers[0])[0]?.currency ?? "RSD",
+                    locale
+                  ),
+                  name: getSupplierItems(belowMinSuppliers[0])[0]?.supplierName ?? "",
+                  amount: formatMoney(
+                    supplierMeta[belowMinSuppliers[0]]?.minOrderValue ?? 0,
+                    getSupplierItems(belowMinSuppliers[0])[0]?.currency ?? "RSD",
+                    locale
+                  ),
+                })}
+              </p>
+            )}
+
+            <Button
+              className="w-full h-10 font-semibold"
+              onClick={handlePlaceAllOrders}
+              disabled={loading || belowMinSuppliers.length > 0}
+            >
               {loading ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />

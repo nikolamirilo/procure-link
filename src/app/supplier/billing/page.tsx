@@ -21,11 +21,18 @@ export default async function SupplierBillingPage() {
   const t = await getTranslations("billing");
   const locale = (await getLocale()) as Locale;
 
-  const { data: sub } = await ctx.supabase
-    .from("supplier_subscriptions")
-    .select("plan_code, status, trial_ends_at")
-    .eq("company_id", ctx.companyId)
-    .maybeSingle();
+  const [{ data: sub }, { data: inquiries }] = await Promise.all([
+    ctx.supabase
+      .from("supplier_subscriptions")
+      .select("plan_code, status, trial_ends_at")
+      .eq("company_id", ctx.companyId)
+      .maybeSingle(),
+    ctx.supabase
+      .from("plan_inquiries")
+      .select("plan_code, created_at")
+      .eq("company_id", ctx.companyId)
+      .eq("status", "pending"),
+  ]);
 
   return (
     <div className="space-y-6">
@@ -59,7 +66,12 @@ export default async function SupplierBillingPage() {
 
       <div>
         <h2 className="text-sm font-semibold text-muted-foreground mb-3">{t("choosePlan")}</h2>
-        <PlanCards />
+        <PlanCards
+          pendingInquiries={(inquiries ?? []).map((i) => ({
+            planCode: i.plan_code ?? "",
+            createdAt: i.created_at,
+          }))}
+        />
         <p className="text-xs text-muted-foreground mt-4 max-w-2xl">{t("softwareFeeNote")}</p>
       </div>
     </div>

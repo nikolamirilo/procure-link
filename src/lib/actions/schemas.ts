@@ -35,6 +35,11 @@ export const placeOrderSchema = z.object({
   deliveryDate: z
     .string()
     .regex(/^\d{4}-\d{2}-\d{2}$/, "Invalid delivery date"),
+  deliveryTime: z
+    .string()
+    .regex(/^\d{2}:\d{2}$/, "Invalid delivery time")
+    .optional()
+    .or(z.literal("")),
   notes: z.string().trim().max(2000).optional().default(""),
   items: z.array(cartItemSchema).min(1, "Order must contain at least one item"),
   idempotencyKey: uuid.optional(),
@@ -68,6 +73,7 @@ export const productSchema = z.object({
   price: z.number().nonnegative("Price cannot be negative").max(10_000_000),
   minOrderQty: z.number().int().positive().max(100000).default(1),
   isAvailable: z.boolean().default(true),
+  imageUrl: z.url().max(600).optional().or(z.literal("")),
 });
 
 export const deliverySlotSchema = z.object({
@@ -80,15 +86,21 @@ export const deliverySlotSchema = z.object({
   isActive: z.boolean().optional(),
 });
 
-export const offerSchema = z.object({
-  productId: uuid,
-  discountPct: z
-    .number()
-    .min(0, "Discount cannot be negative")
-    .max(100, "Discount cannot exceed 100%"),
-  startDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Invalid start date"),
-  endDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Invalid end date"),
-});
+export const offerSchema = z
+  .object({
+    productId: uuid,
+    // Cap at 95%: a fat-fingered "100" should never silently give goods away.
+    discountPct: z
+      .number()
+      .min(1, "Discount must be at least 1%")
+      .max(95, "Discount cannot exceed 95%"),
+    startDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Invalid start date"),
+    endDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Invalid end date"),
+  })
+  .refine((o) => o.endDate >= o.startDate, {
+    message: "End date must be on or after the start date",
+    path: ["endDate"],
+  });
 
 export const recurringItemSchema = z.object({
   productId: uuid,

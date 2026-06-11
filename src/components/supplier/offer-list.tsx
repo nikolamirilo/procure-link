@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import { useTranslations, useLocale } from "next-intl";
 import { toast } from "sonner";
-import { createOffer, deleteOffer } from "@/lib/actions/delivery";
+import { createOffer, deleteOffer, toggleOffer } from "@/lib/actions/delivery";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -23,8 +23,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, Trash2, Tag, Clock, Loader2 } from "lucide-react";
+import { Plus, Trash2, Tag, Clock, Loader2, Pause, Play } from "lucide-react";
 import { formatMoney } from "@/lib/format";
+import { applyDiscount } from "@/lib/pricing";
 import type { Locale } from "@/i18n/config";
 
 interface Offer {
@@ -43,6 +44,8 @@ interface Product {
   price: number;
 }
 
+type OfferState = "active" | "scheduled" | "expired" | "paused";
+
 export function OfferList({
   offers,
   products,
@@ -55,6 +58,7 @@ export function OfferList({
   const t = useTranslations("offers");
   const locale = useLocale() as Locale;
   const [productId, setProductId] = useState("");
+  const [previewPct, setPreviewPct] = useState<number>(0);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [, startTransition] = useTransition();
@@ -62,6 +66,22 @@ export function OfferList({
   const validOffers = offers.filter((o) => o.products !== null);
   const now = new Date();
   const money = (n: number) => formatMoney(n, currency, locale);
+
+  const selectedProduct = products.find((p) => p.id === productId);
+
+  function offerState(offer: Offer): OfferState {
+    if (offer.is_active === false) return "paused";
+    if (new Date(offer.end_date + "T23:59:59") < now) return "expired";
+    if (new Date(offer.start_date) > now) return "scheduled";
+    return "active";
+  }
+
+  const stateBadge: Record<OfferState, { label: string; cls: string }> = {
+    active: { label: t("active"), cls: "bg-white/20 text-white border-white/30 backdrop-blur-sm" },
+    scheduled: { label: t("scheduled"), cls: "bg-white/60 text-foreground/70" },
+    expired: { label: t("expired"), cls: "bg-white/60 text-foreground/60" },
+    paused: { label: t("paused"), cls: "bg-white/60 text-foreground/60" },
+  };
 
   async function handleCreate(formData: FormData) {
     setLoading(true);
@@ -75,6 +95,13 @@ export function OfferList({
   function remove(id: string) {
     startTransition(async () => {
       const r = await deleteOffer(id);
+      if (r?.error) toast.error(r.error);
+    });
+  }
+
+  function togglePaused(offer: Offer) {
+    startTransition(async () => {
+      const r = await toggleOffer(offer.id, offer.is_active === false);
       if (r?.error) toast.error(r.error);
     });
   }
@@ -108,8 +135,35 @@ export function OfferList({
             </div>
             <div className="space-y-2">
               <Label htmlFor="discountPct">{t("discountPct")}</Label>
-              <Input id="discountPct" name="discountPct" type="number" step="0.5" min="0.5" max="100" placeholder="10" className="h-11" required />
+              <Input
+                id="discountPct"
+                name="discountPct"
+                type="number"
+                step="0.5"
+                min="1"
+                max="95"
+                placeholder="10"
+                className="h-11"
+                onChange={(e) => setPreviewPct(Number(e.target.value) || 0)}
+                required
+              />
             </div>
+
+            {/* Live preview: what restaurants will see and pay */}
+            {selectedProduct && previewPct > 0 && previewPct <= 95 && (
+              <div className="rounded-lg border bg-muted/30 px-3 py-2.5 text-sm flex items-center justify-between">
+                <span className="text-muted-foreground">{t("preview")}</span>
+                <span className="tabular-nums">
+                  <span className="line-through text-muted-foreground mr-2">
+                    {money(selectedProduct.price)}
+                  </span>
+                  <span className="font-bold text-red-600 dark:text-red-400">
+                    {money(applyDiscount(selectedProduct.price, previewPct))}
+                  </span>
+                </span>
+              </div>
+            )}
+
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="startDate">{t("startDate")}</Label>
@@ -144,15 +198,14 @@ export function OfferList({
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
           {validOffers.map((offer) => {
-            const isActive =
-              offer.is_active &&
-              new Date(offer.start_date) <= now &&
-              new Date(offer.end_date) >= now;
+            const state = offerState(offer);
+            const isActive = state === "active";
             const originalPrice = offer.products?.price ?? 0;
-            const discountedPrice = originalPrice * (1 - offer.discount_pct / 100);
+            const discountedPrice = applyDiscount(originalPrice, offer.discount_pct);
             const daysLeft = Math.ceil(
               (new Date(offer.end_date).getTime() - now.getTime()) / (1000 * 60 * 60 * 24)
             );
+            const badge = stateBadge[state];
 
             return (
               <div key={offer.id} className="group relative rounded-2xl border bg-card premium-shadow overflow-hidden transition-all duration-300 hover:premium-shadow-lg hover:-translate-y-0.5">
@@ -162,22 +215,33 @@ export function OfferList({
                     <div className="text-white/80 text-sm font-medium">{t("off")}</div>
                   </div>
                   <div className="absolute top-3 right-3">
-                    <Badge className={isActive ? "bg-white/20 text-white border-white/30 backdrop-blur-sm" : "bg-white/60 text-foreground/60"}>
-                      {isActive ? t("active") : t("expired")}
-                    </Badge>
+                    <Badge className={badge.cls}>{badge.label}</Badge>
                   </div>
-                  <ConfirmDialog
-                    trigger={
-                      <Button variant="ghost" size="icon" className="absolute top-3 left-3 h-7 w-7 text-white/60 hover:text-white hover:bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <Trash2 className="h-3.5 w-3.5" />
+                  <div className="absolute top-3 left-3 flex gap-1">
+                    {state !== "expired" && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7 text-white/70 hover:text-white hover:bg-white/20"
+                        title={state === "paused" ? t("resume") : t("pause")}
+                        onClick={() => togglePaused(offer)}
+                      >
+                        {state === "paused" ? <Play className="h-3.5 w-3.5" /> : <Pause className="h-3.5 w-3.5" />}
                       </Button>
-                    }
-                    title={t("deleteTitle")}
-                    description={t("deleteBody")}
-                    confirmLabel={t("deleteTitle")}
-                    variant="destructive"
-                    onConfirm={() => remove(offer.id)}
-                  />
+                    )}
+                    <ConfirmDialog
+                      trigger={
+                        <Button variant="ghost" size="icon" className="h-7 w-7 text-white/70 hover:text-white hover:bg-white/20" title={t("deleteTitle")}>
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
+                      }
+                      title={t("deleteTitle")}
+                      description={t("deleteBody")}
+                      confirmLabel={t("deleteTitle")}
+                      variant="destructive"
+                      onConfirm={() => remove(offer.id)}
+                    />
+                  </div>
                 </div>
 
                 <div className="p-5 space-y-3">

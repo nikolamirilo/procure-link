@@ -1,15 +1,33 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useDeferredValue } from "react";
 import { useTranslations, useLocale } from "next-intl";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Search, ShoppingCart, Package, X, Minus, Plus, Trash2, ArrowRight } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Search,
+  ShoppingCart,
+  Package,
+  X,
+  Minus,
+  Plus,
+  Trash2,
+  ArrowRight,
+  ArrowUpDown,
+} from "lucide-react";
 import { useCart } from "@/hooks/use-cart";
 import Link from "next/link";
 import { Separator } from "@/components/ui/separator";
 import { formatMoney } from "@/lib/format";
+import { applyDiscount } from "@/lib/pricing";
 import type { Locale } from "@/i18n/config";
 
 interface Product {
@@ -20,6 +38,7 @@ interface Product {
   price: number;
   min_order_qty: number | null;
   supplier_id: string;
+  image_urls?: string[] | null;
   categories: { name: string } | null;
   companies: { name: string; slug: string; currency: string } | null;
 }
@@ -36,81 +55,150 @@ interface Supplier {
   slug: string;
 }
 
+type SortKey = "name" | "priceAsc" | "priceDesc";
+
 export function ProductBrowser({
   products,
   categories,
   suppliers,
+  discounts = {},
 }: {
   products: Product[];
   categories: Category[];
   suppliers: Supplier[];
+  /** productId -> active offer discount %, computed server-side. */
+  discounts?: Record<string, number>;
 }) {
   const t = useTranslations("browse");
   const locale = useLocale() as Locale;
   const [search, setSearch] = useState("");
-  const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
-  const [supplierFilter, setSupplierFilter] = useState<string | null>(null);
-  const { addItem, getItemQuantity, items, updateQuantity, removeItem, getSupplierIds, getSupplierItems, totalItems } = useCart();
+  // Deferred search keeps typing snappy on large catalogs without a debounce timer.
+  const deferredSearch = useDeferredValue(search);
+  // Multi-select: "vegetables AND fruit from supplier A OR B" is a real query.
+  const [categoryFilter, setCategoryFilter] = useState<string[]>([]);
+  const [supplierFilter, setSupplierFilter] = useState<string[]>([]);
+  const [offersOnly, setOffersOnly] = useState(false);
+  const [sort, setSort] = useState<SortKey>("name");
+  const {
+    addItem,
+    getItemQuantity,
+    items,
+    updateQuantity,
+    removeItem,
+    getSupplierIds,
+    getSupplierItems,
+    totalItems,
+  } = useCart();
 
-  const hasFilters = !!search || !!categoryFilter || !!supplierFilter;
+  const hasFilters =
+    !!search || categoryFilter.length > 0 || supplierFilter.length > 0 || offersOnly;
+
+  const effectivePrice = (p: Product) => applyDiscount(p.price, discounts[p.id]);
+
+  const categoryNameById = useMemo(
+    () => new Map(categories.map((c) => [c.id, c.name])),
+    [categories]
+  );
 
   const filtered = useMemo(() => {
-    return products.filter((p) => {
+    const q = deferredSearch.toLowerCase();
+    const selectedCategoryNames = new Set(
+      categoryFilter.map((id) => categoryNameById.get(id)).filter(Boolean)
+    );
+    const selectedSuppliers = new Set(supplierFilter);
+
+    const list = products.filter((p) => {
       const matchesSearch =
-        !search ||
-        p.name.toLowerCase().includes(search.toLowerCase()) ||
-        p.description?.toLowerCase().includes(search.toLowerCase());
+        !q ||
+        p.name.toLowerCase().includes(q) ||
+        p.description?.toLowerCase().includes(q);
       const matchesCategory =
-        !categoryFilter ||
-        p.categories?.name ===
-          categories.find((c) => c.id === categoryFilter)?.name;
+        selectedCategoryNames.size === 0 ||
+        (p.categories && selectedCategoryNames.has(p.categories.name));
       const matchesSupplier =
-        !supplierFilter || p.supplier_id === supplierFilter;
-      return matchesSearch && matchesCategory && matchesSupplier;
+        selectedSuppliers.size === 0 || selectedSuppliers.has(p.supplier_id);
+      const matchesOffer = !offersOnly || (discounts[p.id] ?? 0) > 0;
+      return matchesSearch && matchesCategory && matchesSupplier && matchesOffer;
     });
-  }, [products, search, categoryFilter, supplierFilter, categories]);
+
+    // Price sort uses the effective (discounted) price - what you'd pay.
+    return [...list].sort((a, b) => {
+      if (sort === "priceAsc") return effectivePrice(a) - effectivePrice(b);
+      if (sort === "priceDesc") return effectivePrice(b) - effectivePrice(a);
+      return a.name.localeCompare(b.name, locale);
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [products, deferredSearch, categoryFilter, supplierFilter, offersOnly, sort, categoryNameById, locale, discounts]);
+
+  function toggleInList(list: string[], id: string): string[] {
+    return list.includes(id) ? list.filter((x) => x !== id) : [...list, id];
+  }
 
   function clearFilters() {
     setSearch("");
-    setCategoryFilter(null);
-    setSupplierFilter(null);
+    setCategoryFilter([]);
+    setSupplierFilter([]);
+    setOffersOnly(false);
   }
 
-  const activeCategoryName = categoryFilter
-    ? categories.find((c) => c.id === categoryFilter)?.name
-    : null;
-  const activeSupplierName = supplierFilter
-    ? suppliers.find((s) => s.id === supplierFilter)?.name
-    : null;
+  // Cart totals per currency for the mobile bar (suppliers may differ).
+  const cartTotals = useMemo(() => {
+    const byCurrency = new Map<string, number>();
+    for (const i of items) {
+      byCurrency.set(i.currency, (byCurrency.get(i.currency) ?? 0) + i.unitPrice * i.quantity);
+    }
+    return [...byCurrency.entries()]
+      .map(([cur, total]) => formatMoney(total, cur, locale))
+      .join(" + ");
+  }, [items, locale]);
 
   return (
-    <div className="space-y-5">
-      {/* Search */}
-      <div className="relative">
-        <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-        <Input
-          placeholder={t("searchPlaceholder")}
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="pl-10 h-11"
-        />
-        {search && (
-          <button
-            onClick={() => setSearch("")}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground cursor-pointer"
-          >
-            <X className="h-4 w-4" />
-          </button>
-        )}
+    <div className="space-y-5 pb-20 lg:pb-0">
+      {/* Search + sort */}
+      <div className="flex flex-col sm:flex-row gap-3">
+        <div className="relative flex-1">
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder={t("searchPlaceholder")}
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="pl-10 h-11"
+          />
+          {search && (
+            <button
+              onClick={() => setSearch("")}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground cursor-pointer"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          )}
+        </div>
+        <div className="sm:w-56">
+          <Select value={sort} onValueChange={(v) => v && setSort(v as SortKey)}>
+            <SelectTrigger className="h-11">
+              <span className="flex items-center gap-2">
+                <ArrowUpDown className="h-3.5 w-3.5 text-muted-foreground" />
+                <SelectValue />
+              </span>
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="name">{t("sortName")}</SelectItem>
+              <SelectItem value="priceAsc">{t("sortPriceAsc")}</SelectItem>
+              <SelectItem value="priceDesc">{t("sortPriceDesc")}</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
-      {/* Category chips */}
+      {/* Category chips - multi-select */}
       <div className="flex gap-2 flex-wrap items-center">
         <span className="text-xs font-medium text-muted-foreground mr-1">{t("category")}:</span>
         <button
-          onClick={() => setCategoryFilter(null)}
+          onClick={() => setCategoryFilter([])}
           className={`px-3 py-1.5 rounded-full text-xs font-medium cursor-pointer transition-colors ${
-            !categoryFilter ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-muted/80"
+            categoryFilter.length === 0
+              ? "bg-primary text-primary-foreground"
+              : "bg-muted text-muted-foreground hover:bg-muted/80"
           }`}
         >
           {t("all")}
@@ -118,9 +206,11 @@ export function ProductBrowser({
         {categories.map((c) => (
           <button
             key={c.id}
-            onClick={() => setCategoryFilter(categoryFilter === c.id ? null : c.id)}
+            onClick={() => setCategoryFilter((prev) => toggleInList(prev, c.id))}
             className={`px-3 py-1.5 rounded-full text-xs font-medium cursor-pointer transition-colors ${
-              categoryFilter === c.id ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-muted/80"
+              categoryFilter.includes(c.id)
+                ? "bg-primary text-primary-foreground"
+                : "bg-muted text-muted-foreground hover:bg-muted/80"
             }`}
           >
             {c.name}
@@ -128,13 +218,15 @@ export function ProductBrowser({
         ))}
       </div>
 
-      {/* Supplier chips */}
+      {/* Supplier chips - multi-select */}
       <div className="flex gap-2 flex-wrap items-center">
         <span className="text-xs font-medium text-muted-foreground mr-1">{t("supplier")}:</span>
         <button
-          onClick={() => setSupplierFilter(null)}
+          onClick={() => setSupplierFilter([])}
           className={`px-3 py-1.5 rounded-full text-xs font-medium cursor-pointer transition-colors ${
-            !supplierFilter ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-muted/80"
+            supplierFilter.length === 0
+              ? "bg-primary text-primary-foreground"
+              : "bg-muted text-muted-foreground hover:bg-muted/80"
           }`}
         >
           {t("all")}
@@ -142,9 +234,11 @@ export function ProductBrowser({
         {suppliers.map((s) => (
           <button
             key={s.id}
-            onClick={() => setSupplierFilter(supplierFilter === s.id ? null : s.id)}
+            onClick={() => setSupplierFilter((prev) => toggleInList(prev, s.id))}
             className={`px-3 py-1.5 rounded-full text-xs font-medium cursor-pointer transition-colors ${
-              supplierFilter === s.id ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-muted/80"
+              supplierFilter.includes(s.id)
+                ? "bg-primary text-primary-foreground"
+                : "bg-muted text-muted-foreground hover:bg-muted/80"
             }`}
           >
             {s.name}
@@ -152,17 +246,23 @@ export function ProductBrowser({
         ))}
       </div>
 
-      {/* Active filter summary */}
-      <div className="flex items-center justify-between">
-        <p className="text-sm text-muted-foreground">
-          {t("results", { count: filtered.length })}
-          {activeCategoryName && (
-            <span> {t("inCategory")} <span className="font-medium text-foreground">{activeCategoryName}</span></span>
-          )}
-          {activeSupplierName && (
-            <span> {t("fromSupplier")} <span className="font-medium text-foreground">{activeSupplierName}</span></span>
-          )}
-        </p>
+      {/* Active filter summary + offers toggle */}
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => setOffersOnly((v) => !v)}
+            className={`px-3 py-1.5 rounded-full text-xs font-bold cursor-pointer transition-colors ${
+              offersOnly
+                ? "bg-red-600 text-white"
+                : "bg-red-50 text-red-700 hover:bg-red-100 dark:bg-red-950/40 dark:text-red-400"
+            }`}
+          >
+            % {t("onOffer")}
+          </button>
+          <p className="text-sm text-muted-foreground">
+            {t("results", { count: filtered.length })}
+          </p>
+        </div>
         {hasFilters && (
           <Button variant="ghost" size="sm" className="text-xs h-7 px-2" onClick={clearFilters}>
             <X className="h-3 w-3 mr-1" />
@@ -192,17 +292,45 @@ export function ProductBrowser({
               {filtered.map((product) => {
                 const qty = getItemQuantity(product.id);
                 const currency = product.companies?.currency ?? "RSD";
+                const minQty = product.min_order_qty ?? 1;
+                const image = product.image_urls?.[0];
+                const pct = discounts[product.id] ?? 0;
+                const price = effectivePrice(product);
                 return (
                   <div
                     key={product.id}
-                    className="group rounded-2xl border bg-card premium-shadow hover:premium-shadow-lg transition-all duration-300 hover:-translate-y-0.5 overflow-hidden"
+                    className="group relative rounded-2xl border bg-card premium-shadow hover:premium-shadow-lg transition-all duration-300 hover:-translate-y-0.5 overflow-hidden flex flex-col"
                   >
-                    <div className="h-1.5 bg-gradient-to-r from-primary/60 to-primary/20" />
-                    <div className="p-5 space-y-3">
+                    {pct > 0 && (
+                      <span className="absolute top-2 right-2 z-10 rounded-full bg-red-600 text-white text-[11px] font-black px-2 py-0.5 shadow">
+                        -{pct}%
+                      </span>
+                    )}
+                    {image ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={image}
+                        alt={product.name}
+                        loading="lazy"
+                        className="h-32 w-full object-cover"
+                      />
+                    ) : (
+                      <div className="h-1.5 bg-gradient-to-r from-primary/60 to-primary/20" />
+                    )}
+                    <div className="p-5 space-y-3 flex-1 flex flex-col">
                       <div className="flex items-start justify-between gap-2">
                         <div className="min-w-0">
-                          <h3 className="font-semibold text-[15px] truncate">{product.name}</h3>
-                          <p className="text-xs text-muted-foreground mt-0.5">{product.companies?.name}</p>
+                          <h3 className="font-semibold text-[15px] truncate" title={product.name}>
+                            {product.name}
+                          </h3>
+                          {/* Supplier name links to the profile - it was dead text */}
+                          <Link
+                            href={`/restaurant/suppliers/${product.supplier_id}`}
+                            className="text-xs text-muted-foreground mt-0.5 hover:text-primary hover:underline block truncate"
+                            title={product.companies?.name}
+                          >
+                            {product.companies?.name}
+                          </Link>
                         </div>
                         {product.categories && (
                           <Badge variant="outline" className="text-[10px] shrink-0 px-2 py-0.5 font-medium">
@@ -215,36 +343,64 @@ export function ProductBrowser({
                         <p className="text-xs text-muted-foreground leading-relaxed line-clamp-2">{product.description}</p>
                       )}
 
-                      <div className="flex items-end justify-between pt-1">
+                      <div className="flex items-end justify-between pt-1 mt-auto">
                         <div>
-                          <span className="text-xl font-bold tracking-tight">
-                            {formatMoney(product.price, currency, locale)}
+                          {pct > 0 && (
+                            <span className="block text-xs text-muted-foreground line-through tabular-nums">
+                              {formatMoney(product.price, currency, locale)}
+                            </span>
+                          )}
+                          <span className={`text-xl font-bold tracking-tight ${pct > 0 ? "text-red-600 dark:text-red-400" : ""}`}>
+                            {formatMoney(price, currency, locale)}
                           </span>
                           <span className="text-xs text-muted-foreground ml-1">/{product.unit}</span>
                           <p className="text-[10px] text-muted-foreground mt-0.5">
-                            {t("min")}: {product.min_order_qty ?? 1} {product.unit}
+                            {t("min")}: {minQty} {product.unit}
                           </p>
                         </div>
-                        <Button
-                          size="sm"
-                          variant={qty > 0 ? "secondary" : "default"}
-                          className="rounded-lg h-8 px-3 font-semibold text-xs"
-                          onClick={() =>
-                            addItem({
-                              productId: product.id,
-                              productName: product.name,
-                              unit: product.unit,
-                              unitPrice: product.price,
-                              supplierId: product.supplier_id,
-                              supplierName: product.companies?.name ?? "",
-                              minQty: product.min_order_qty ?? 1,
-                              currency,
-                            })
-                          }
-                        >
-                          <ShoppingCart className="h-3.5 w-3.5 mr-1" />
-                          {qty > 0 ? `(${qty})` : t("add")}
-                        </Button>
+                        {qty > 0 ? (
+                          /* Inline stepper - adjust without hunting for the sidebar */
+                          <div className="flex items-center gap-1">
+                            <button
+                              className="h-8 w-8 rounded-lg border flex items-center justify-center hover:bg-muted cursor-pointer transition-colors"
+                              onClick={() =>
+                                updateQuantity(product.id, qty - 1 < minQty ? 0 : qty - 1)
+                              }
+                            >
+                              <Minus className="h-3.5 w-3.5" />
+                            </button>
+                            <span className="w-8 text-center text-sm font-bold tabular-nums">{qty}</span>
+                            <button
+                              className="h-8 w-8 rounded-lg border flex items-center justify-center hover:bg-muted cursor-pointer transition-colors"
+                              onClick={() => updateQuantity(product.id, qty + 1)}
+                            >
+                              <Plus className="h-3.5 w-3.5" />
+                            </button>
+                          </div>
+                        ) : (
+                          <Button
+                            size="sm"
+                            className="rounded-lg h-8 px-3 font-semibold text-xs"
+                            onClick={() =>
+                              addItem({
+                                productId: product.id,
+                                productName: product.name,
+                                unit: product.unit,
+                                unitPrice: price,
+                                ...(pct > 0
+                                  ? { originalUnitPrice: product.price, discountPct: pct }
+                                  : {}),
+                                supplierId: product.supplier_id,
+                                supplierName: product.companies?.name ?? "",
+                                minQty,
+                                currency,
+                              })
+                            }
+                          >
+                            <ShoppingCart className="h-3.5 w-3.5 mr-1" />
+                            {t("add")}
+                          </Button>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -254,7 +410,7 @@ export function ProductBrowser({
           )}
         </div>
 
-        {/* Cart sidebar */}
+        {/* Cart sidebar (desktop) */}
         {items.length > 0 && (
           <div className="hidden lg:block">
             <div className="sticky top-6 rounded-2xl border bg-card premium-shadow overflow-hidden">
@@ -278,7 +434,7 @@ export function ProductBrowser({
                   return (
                     <div key={supplierId} className="border-b last:border-b-0">
                       <div className="px-3 py-2 bg-muted/20 flex items-center justify-between">
-                        <span className="text-xs font-semibold truncate">{supplierName}</span>
+                        <span className="text-xs font-semibold truncate" title={supplierName}>{supplierName}</span>
                         <span className="text-xs font-bold tabular-nums shrink-0 ml-2">
                           {formatMoney(subtotal, currency, locale)}
                         </span>
@@ -288,7 +444,9 @@ export function ProductBrowser({
                           <div key={item.productId} className="px-3 py-2 space-y-1.5">
                             <div className="flex items-start justify-between gap-2">
                               <div className="min-w-0">
-                                <span className="text-xs font-medium leading-tight truncate block">{item.productName}</span>
+                                <span className="text-xs font-medium leading-tight truncate block" title={item.productName}>
+                                  {item.productName}
+                                </span>
                                 <span className="text-[10px] text-muted-foreground">
                                   {formatMoney(item.unitPrice, item.currency, locale)} / {item.unit}
                                 </span>
@@ -342,6 +500,25 @@ export function ProductBrowser({
           </div>
         )}
       </div>
+
+      {/* Mobile sticky cart bar - the sidebar is desktop-only, but most
+          restaurant ordering happens on a phone in the kitchen */}
+      {items.length > 0 && (
+        <div className="lg:hidden fixed bottom-0 left-0 right-0 z-40 border-t bg-background/95 backdrop-blur px-4 py-3">
+          <Link href="/restaurant/cart" className="block">
+            <Button className="w-full h-11 font-semibold justify-between">
+              <span className="flex items-center gap-2">
+                <ShoppingCart className="h-4 w-4" />
+                {t("items", { count: totalItems })}
+              </span>
+              <span className="flex items-center gap-2 tabular-nums">
+                {cartTotals}
+                <ArrowRight className="h-4 w-4" />
+              </span>
+            </Button>
+          </Link>
+        </div>
+      )}
     </div>
   );
 }

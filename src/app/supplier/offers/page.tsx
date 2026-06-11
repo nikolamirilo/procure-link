@@ -1,11 +1,17 @@
 export const dynamic = "force-dynamic";
 
+import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getTranslations } from "next-intl/server";
 import { PageHeader } from "@/components/shared/page-header";
 import { OfferList } from "@/components/supplier/offer-list";
+import { FEATURES } from "@/lib/features";
 
 export default async function OffersPage() {
+  // Hidden until restaurants can actually see and benefit from offers
+  // (browse badges + checkout pricing). See docs/ux-improvement-proposal.md 3.4.
+  if (!FEATURES.offers) redirect("/supplier/dashboard");
+
   const supabase = await createClient();
   const t = await getTranslations("pageHeaders");
   const {

@@ -18,6 +18,7 @@ export function ScheduleConfigurator({
   onScheduleDaysChange,
 }: ScheduleConfiguratorProps) {
   const t = useTranslations("recurring");
+  const tf = useTranslations("recurringForm");
   const td = useTranslations("days");
 
   function toggleDay(day: number) {
@@ -139,6 +140,13 @@ export function ScheduleConfigurator({
       <p className="text-sm text-muted-foreground">
         {getSummary()}
       </p>
+
+      {/* Short-month guard: day 29-31 schedules run on the last day instead */}
+      {frequency === "monthly" && scheduleDays.some((d) => d > 28) && (
+        <p className="text-xs text-amber-700 dark:text-amber-400">
+          {tf("monthlyHint")}
+        </p>
+      )}
     </div>
   );
 }

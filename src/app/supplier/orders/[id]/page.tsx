@@ -3,6 +3,7 @@ export const dynamic = "force-dynamic";
 import { redirect, notFound } from "next/navigation";
 import { getAuthContext } from "@/lib/actions/_auth";
 import { OrderDetail } from "@/components/shared/order-detail";
+import { OrderStatusActions } from "@/components/supplier/order-status-actions";
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -30,6 +31,16 @@ export default async function SupplierOrderDetailPage({ params }: Props) {
       counterparty={order.restaurant}
       counterpartyRole="restaurant"
       backHref="/supplier/orders"
+      actions={
+        <OrderStatusActions
+          order={{
+            id: order.id,
+            order_number: order.order_number,
+            status: order.status,
+            payment_status: order.payment_status,
+          }}
+        />
+      }
     />
   );
 }

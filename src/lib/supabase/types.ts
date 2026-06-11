@@ -284,8 +284,10 @@ export type Database = {
       }
       order_items: {
         Row: {
+          discount_pct: number | null
           id: string
           order_id: string
+          original_unit_price: number | null
           product_id: string
           product_name: string
           quantity: number
@@ -294,8 +296,10 @@ export type Database = {
           unit_price: number
         }
         Insert: {
+          discount_pct?: number | null
           id?: string
           order_id: string
+          original_unit_price?: number | null
           product_id: string
           product_name: string
           quantity: number
@@ -304,8 +308,10 @@ export type Database = {
           unit_price: number
         }
         Update: {
+          discount_pct?: number | null
           id?: string
           order_id?: string
+          original_unit_price?: number | null
           product_id?: string
           product_name?: string
           quantity?: number
@@ -341,6 +347,8 @@ export type Database = {
           delivered_at: string | null
           delivery_date: string
           delivery_slot_id: string | null
+          delivery_time: string | null
+          dispatched_at: string | null
           id: string
           idempotency_key: string | null
           is_auto_placed: boolean
@@ -369,6 +377,8 @@ export type Database = {
           delivered_at?: string | null
           delivery_date: string
           delivery_slot_id?: string | null
+          delivery_time?: string | null
+          dispatched_at?: string | null
           id?: string
           idempotency_key?: string | null
           is_auto_placed?: boolean
@@ -397,6 +407,8 @@ export type Database = {
           delivered_at?: string | null
           delivery_date?: string
           delivery_slot_id?: string | null
+          delivery_time?: string | null
+          dispatched_at?: string | null
           id?: string
           idempotency_key?: string | null
           is_auto_placed?: boolean

@@ -8,11 +8,13 @@ import { toast } from "sonner";
 import {
   toggleRecurringOrder,
   deleteRecurringOrder,
+  runRecurringOrderNow,
 } from "@/lib/actions/recurring-orders";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/shared/confirm-dialog";
 import { formatMoney, formatDay } from "@/lib/format";
+import { AUTOMATION_STATUSES } from "@/lib/constants";
 import type { Locale } from "@/i18n/config";
 import {
   Pause,
@@ -20,6 +22,7 @@ import {
   Trash2,
   Pencil,
   Loader2,
+  Zap,
   CalendarClock,
   Truck,
   Package,
@@ -104,6 +107,17 @@ export function RecurringOrderDetail({
     });
   }
 
+  function handleRunNow() {
+    startTransition(async () => {
+      const r = await runRecurringOrderNow(order.id);
+      if (r?.error) toast.error(r.error);
+      else {
+        toast.success(t("runNowSuccess", { number: String(r.orderNumber ?? "") }));
+        router.refresh();
+      }
+    });
+  }
+
   const statusLabel = (s: string) =>
     s === "success" ? t("statusSuccess") : s === "error" ? t("statusError") : t("statusSkipped");
 
@@ -113,13 +127,31 @@ export function RecurringOrderDetail({
         <div>
           <div className="flex items-center gap-3">
             <h1 className="text-2xl md:text-3xl font-bold tracking-tight">{order.name}</h1>
-            <Badge className={order.is_active ? "bg-green-100 text-green-800" : "bg-yellow-100 text-yellow-800"}>
+            <Badge
+              className={
+                order.is_active
+                  ? AUTOMATION_STATUSES.active.color
+                  : AUTOMATION_STATUSES.paused.color
+              }
+            >
               {order.is_active ? t("active") : t("paused")}
             </Badge>
           </div>
           <p className="text-muted-foreground mt-1">{order.supplier_name}</p>
         </div>
-        <div className="flex gap-2 shrink-0">
+        <div className="flex gap-2 shrink-0 flex-wrap">
+          <ConfirmDialog
+            trigger={
+              <Button variant="outline" size="sm" className="gap-1" disabled={pending}>
+                <Zap className="h-3.5 w-3.5" />
+                {t("runNow")}
+              </Button>
+            }
+            title={t("runNowTitle")}
+            description={t("runNowBody")}
+            confirmLabel={t("runNow")}
+            onConfirm={handleRunNow}
+          />
           <Link href={`/restaurant/automations/${order.id}/edit`}>
             <Button variant="outline" size="sm" className="gap-1">
               <Pencil className="h-3.5 w-3.5" />
@@ -191,9 +223,9 @@ export function RecurringOrderDetail({
                 {order.runs.map((run) => (
                   <div key={run.id} className="flex items-center justify-between px-5 py-3 text-sm">
                     <div className="flex items-center gap-2">
-                      {run.status === "success" && <CheckCircle2 className="h-4 w-4 text-green-600" />}
+                      {run.status === "success" && <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />}
                       {run.status === "error" && <XCircle className="h-4 w-4 text-red-600" />}
-                      {run.status === "skipped" && <AlertTriangle className="h-4 w-4 text-yellow-600" />}
+                      {run.status === "skipped" && <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400" />}
                       <span>{run.run_at ? formatDay(run.run_at, "d. MMM HH:mm", locale) : "-"}</span>
                     </div>
                     <div className="flex items-center gap-2">
@@ -206,10 +238,10 @@ export function RecurringOrderDetail({
                       <Badge
                         className={
                           run.status === "success"
-                            ? "bg-green-100 text-green-800 text-[10px]"
+                            ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-400/10 dark:text-emerald-300 text-[10px]"
                             : run.status === "error"
-                              ? "bg-red-100 text-red-800 text-[10px]"
-                              : "bg-yellow-100 text-yellow-800 text-[10px]"
+                              ? "bg-rose-100 text-rose-800 dark:bg-rose-400/10 dark:text-rose-300 text-[10px]"
+                              : "bg-amber-100 text-amber-800 dark:bg-amber-400/10 dark:text-amber-300 text-[10px]"
                         }
                       >
                         {statusLabel(run.status)}

@@ -22,10 +22,10 @@ interface NavItem {
 
 interface SidebarNavProps {
   items: NavItem[];
-  title: string;
+  title?: string;
 }
 
-export function SidebarNav({ items, title }: SidebarNavProps) {
+export function SidebarNav({ items }: SidebarNavProps) {
   const pathname = usePathname();
   const { theme, toggleTheme } = useTheme();
   const t = useTranslations();
@@ -52,8 +52,8 @@ export function SidebarNav({ items, title }: SidebarNavProps) {
               className={cn(
                 "flex items-center gap-3 rounded-lg px-3 py-2.5 text-[13px] font-medium transition-all duration-150",
                 isActive
-                  ? "bg-sidebar-primary text-sidebar-primary-foreground shadow-sm"
-                  : "text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent"
+                  ? "bg-sidebar-primary text-sidebar-primary-foreground shadow-md shadow-sidebar-primary/25"
+                  : "text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent hover:translate-x-0.5"
               )}
             >
               <Icon className="h-[18px] w-[18px]" />

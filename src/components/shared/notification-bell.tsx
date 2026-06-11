@@ -20,7 +20,19 @@ interface Notification {
   created_at: string | null;
 }
 
-export function NotificationBell() {
+/**
+ * In-app notification bell.
+ * variant="sidebar": full-width row used in the desktop sidebar.
+ * variant="compact": icon-only button for the mobile header, so notifications
+ * are reachable on phones too (suppliers confirm orders from the floor).
+ * Polls every 60s and refetches on focus, so the unread badge stays honest
+ * without a manual refresh.
+ */
+export function NotificationBell({
+  variant = "sidebar",
+}: {
+  variant?: "sidebar" | "compact";
+}) {
   const t = useTranslations("notificationsPanel");
   const locale = useLocale() as Locale;
   const [items, setItems] = useState<Notification[]>([]);
@@ -36,10 +48,22 @@ export function NotificationBell() {
   }, [supabase]);
 
   useEffect(() => {
-    // Fetch notifications on mount; setState happens after the async load, not
-    // as a synchronous cascade.
+    // Fetch on mount, then keep fresh: 60s poll + refetch when the tab
+    // regains focus. setState happens after the async load, not as a
+    // synchronous cascade.
     // eslint-disable-next-line react-hooks/set-state-in-effect
     load();
+    const interval = setInterval(load, 60_000);
+    const onFocus = () => {
+      if (document.visibilityState === "visible") load();
+    };
+    window.addEventListener("focus", onFocus);
+    document.addEventListener("visibilitychange", onFocus);
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener("focus", onFocus);
+      document.removeEventListener("visibilitychange", onFocus);
+    };
   }, [load]);
 
   const unread = items.filter((i) => !i.is_read).length;
@@ -58,18 +82,32 @@ export function NotificationBell() {
 
   return (
     <DropdownMenu onOpenChange={(open) => open && load()}>
-      <DropdownMenuTrigger
-        aria-label={t("title")}
-        className="relative flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-[13px] font-medium text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent transition-colors cursor-pointer"
-      >
-        <Bell className="h-[18px] w-[18px]" />
-        <span className="flex-1 text-left">{t("title")}</span>
-        {unread > 0 && (
-          <span className="inline-flex items-center justify-center h-5 min-w-5 px-1.5 rounded-full text-[10px] font-bold bg-sidebar-primary text-sidebar-primary-foreground">
-            {unread}
-          </span>
-        )}
-      </DropdownMenuTrigger>
+      {variant === "compact" ? (
+        <DropdownMenuTrigger
+          aria-label={t("title")}
+          className="relative p-2 rounded-lg hover:bg-muted transition-colors cursor-pointer"
+        >
+          <Bell className="h-5 w-5" />
+          {unread > 0 && (
+            <span className="absolute -top-0.5 -right-0.5 inline-flex items-center justify-center h-4 min-w-4 px-1 rounded-full text-[9px] font-bold bg-primary text-primary-foreground">
+              {unread}
+            </span>
+          )}
+        </DropdownMenuTrigger>
+      ) : (
+        <DropdownMenuTrigger
+          aria-label={t("title")}
+          className="relative flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-[13px] font-medium text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent transition-colors cursor-pointer"
+        >
+          <Bell className="h-[18px] w-[18px]" />
+          <span className="flex-1 text-left">{t("title")}</span>
+          {unread > 0 && (
+            <span className="inline-flex items-center justify-center h-5 min-w-5 px-1.5 rounded-full text-[10px] font-bold bg-sidebar-primary text-sidebar-primary-foreground">
+              {unread}
+            </span>
+          )}
+        </DropdownMenuTrigger>
+      )}
       <DropdownMenuContent align="start" className="w-80 max-h-96 overflow-y-auto p-0">
         <div className="flex items-center justify-between px-3 py-2 border-b">
           <span className="text-sm font-semibold">{t("title")}</span>

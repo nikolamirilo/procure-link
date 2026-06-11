@@ -22,16 +22,20 @@ function dayIndex(date: Date) {
 /**
  * Date picker that only allows days the supplier actually delivers on.
  * `availableDays` is a list of 0=Mon..6=Sun; empty means the supplier has no
- * published slots, so any future day is allowed.
+ * published slots, so any future day is allowed. `leadTimeHours` additionally
+ * blocks dates that are closer than the supplier's required notice (the end
+ * of the delivery day must be at least that far away - mirrors placeOrder).
  */
 export function DeliveryDatePicker({
   value,
   onChange,
   availableDays,
+  leadTimeHours = 0,
 }: {
   value: string;
   onChange: (value: string) => void;
   availableDays: number[];
+  leadTimeHours?: number;
 }) {
   const t = useTranslations("cart");
   const td = useTranslations("days");
@@ -44,6 +48,13 @@ export function DeliveryDatePicker({
 
   function isDisabled(date: Date) {
     if (date < today) return true;
+    if (leadTimeHours > 0) {
+      const endOfDay = new Date(date);
+      endOfDay.setHours(23, 59, 59, 0);
+      if (endOfDay.getTime() < Date.now() + leadTimeHours * 60 * 60 * 1000) {
+        return true;
+      }
+    }
     if (availableDays.length === 0) return false;
     return !availableDays.includes(dayIndex(date));
   }
